@@ -34,6 +34,6 @@ func (r AppRouter) post(path string, handler func(http.ResponseWriter, *http.Req
 // 	r.router.Methods(http.MethodPut).Path(path).HandlerFunc(handler)
 // }
 
-// func (r AppRouter) delete(path string, handler func(http.ResponseWriter, *http.Request)) {
-// 	r.router.Methods(http.MethodDelete).Path(path).HandlerFunc(handler)
-// }
+func (r AppRouter) delete(path string, handler func(http.ResponseWriter, *http.Request)) {
+	r.router.Methods(http.MethodDelete).Path(path).HandlerFunc(handler)
+}

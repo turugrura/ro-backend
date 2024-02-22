@@ -25,6 +25,7 @@ import (
 var userCollection *mongo.Collection
 var authDataCollection *mongo.Collection
 var refreshTokenCollection *mongo.Collection
+var roPresetCollection *mongo.Collection
 
 var appConfig configuration.AppConfig
 
@@ -42,10 +43,12 @@ func main() {
 	var userRepo = repository.NewUserRepo(userCollection)
 	var authDataRepo = repository.NewAuthenticationDataRepo(authDataCollection)
 	var refreshTokenRepo = repository.NewRefreshTokenRepo(refreshTokenCollection)
+	var roPresetRepo = repository.NewRoPresetRepository(roPresetCollection)
 
 	var userService = service.NewUserService(userRepo)
 	var tokenService = service.NewTokenService(refreshTokenRepo)
 	var authDataService = service.NewAuthenticationDataService(authDataRepo)
+	var roPresetService = service.NewRoPresetService(roPresetRepo)
 
 	var authHandler = handler.NewAuthHandler(handler.AuthHandlerParam{
 		UserService:               userService,
@@ -53,6 +56,10 @@ func main() {
 		TokenService:              tokenService,
 	})
 	var userHandler = handler.NewUserHandler(userService)
+	var roPresetHandler = handler.NewRoPresetHandler(handler.RoPresetHandlerParam{
+		RoPresetService: roPresetService,
+		UserService:     userService,
+	})
 
 	r := newAppRouter(mux.NewRouter())
 	r.use(jsonResponseMiddleware)
@@ -66,6 +73,15 @@ func main() {
 	me := r.subRouter("/me")
 	me.use(userGuard)
 	me.get("", userHandler.GetMyProfile)
+	me.get("/ro_presets", roPresetHandler.GetMyPresets)
+
+	ro := r.subRouter("/ro_presets")
+	ro.use(userGuard)
+	ro.post("", roPresetHandler.CreatePreset)
+	ro.post("/bulk", roPresetHandler.BulkCreatePresets)
+	ro.get("/{presetId}", roPresetHandler.GetPresetById)
+	ro.post("/{presetId}", roPresetHandler.UpdatePreset)
+	ro.delete("/{presetId}", roPresetHandler.DeleteById)
 
 	appPort := appConfig.Port
 	log.Printf("listening on localhost:%v\n", appPort)
@@ -122,6 +138,7 @@ func connectMongoDB() (err error) {
 	userCollection = mongoDb.Collection("users")
 	authDataCollection = mongoDb.Collection("authorization_codes")
 	refreshTokenCollection = mongoDb.Collection("refresh_tokens")
+	roPresetCollection = mongoDb.Collection("ro_presets")
 
 	return
 }

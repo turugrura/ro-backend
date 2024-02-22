@@ -19,9 +19,9 @@ type authHandler struct {
 }
 
 type AuthHandler interface {
-	Login(res http.ResponseWriter, req *http.Request)
-	RefreshToken(res http.ResponseWriter, req *http.Request)
-	AuthenticationCallback(res http.ResponseWriter, req *http.Request)
+	Login(http.ResponseWriter, *http.Request)
+	RefreshToken(http.ResponseWriter, *http.Request)
+	AuthenticationCallback(http.ResponseWriter, *http.Request)
 }
 
 type AuthHandlerParam struct {
@@ -35,21 +35,21 @@ func NewAuthHandler(param AuthHandlerParam) AuthHandler {
 }
 
 type LoginRequest struct {
-	AuthorizationCode string `json:"authorization_code"`
+	AuthorizationCode string `json:"authorizationCode"`
 }
 
 type LoginResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refreshToken"`
 }
 
-func (h authHandler) Login(res http.ResponseWriter, req *http.Request) {
+func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var p LoginRequest
-	err := json.NewDecoder(req.Body).Decode(&p)
+	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -81,7 +81,7 @@ func (h authHandler) Login(res http.ResponseWriter, req *http.Request) {
 
 	generatedToken, err := h.tokenService.GenerateAccessToken(service.AccessTokenRequest{
 		UserId:    user.Id,
-		UserAgent: req.Header.Get("user-agent"),
+		UserAgent: r.Header.Get("user-agent"),
 	})
 	if err != nil {
 		fmt.Print(err)
@@ -93,13 +93,13 @@ func (h authHandler) Login(res http.ResponseWriter, req *http.Request) {
 		RefreshToken: generatedToken.RefreshToken,
 	}
 
-	json.NewEncoder(res).Encode(loginResponse)
+	json.NewEncoder(w).Encode(loginResponse)
 }
 
-func (h authHandler) AuthenticationCallback(res http.ResponseWriter, req *http.Request) {
-	userInfo, err := gothic.CompleteUserAuth(res, req)
+func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Request) {
+	userInfo, err := gothic.CompleteUserAuth(w, r)
 	if err != nil {
-		fmt.Fprintln(res, err)
+		fmt.Fprintln(w, err)
 		return
 	}
 
@@ -147,17 +147,16 @@ func (h authHandler) AuthenticationCallback(res http.ResponseWriter, req *http.R
 		return
 	}
 
-	fmt.Printf("Code: %v\n", createdAuthData.Code)
 	var redirectUrl = fmt.Sprintf("%v?%v=%v", configuration.Config.Auth.PostAuthenticationRedirectUrl, "auth_code", createdAuthData.Code)
 
-	http.Redirect(res, req, redirectUrl, http.StatusPermanentRedirect)
+	http.Redirect(w, r, redirectUrl, http.StatusPermanentRedirect)
 }
 
-func (h authHandler) RefreshToken(res http.ResponseWriter, req *http.Request) {
+func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	var p RefreshTokenRequest
-	err := json.NewDecoder(req.Body).Decode(&p)
+	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		http.Error(res, fmt.Sprintf("cannot read body, %v\n", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("cannot read body, %v\n", err), http.StatusBadRequest)
 		return
 	}
 
@@ -167,8 +166,6 @@ func (h authHandler) RefreshToken(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Println("claims.Subject", claims.Subject)
-
 	count, err := strconv.ParseUint(claims.Subject, 10, 32)
 	if err != nil {
 		fmt.Printf("cannot ParseUint, %v\n", err)
@@ -177,7 +174,7 @@ func (h authHandler) RefreshToken(res http.ResponseWriter, req *http.Request) {
 
 	newToken, err := h.tokenService.RefreshToken(service.RefreshTokenRequest{
 		Id:        claims.Id,
-		UserAgent: req.UserAgent(),
+		UserAgent: r.UserAgent(),
 		UserId:    claims.Issuer,
 		Count:     uint32(count),
 	})
@@ -191,5 +188,5 @@ func (h authHandler) RefreshToken(res http.ResponseWriter, req *http.Request) {
 		RefreshToken: newToken.RefreshToken,
 	}
 
-	json.NewEncoder(res).Encode(loginResponse)
+	json.NewEncoder(w).Encode(loginResponse)
 }

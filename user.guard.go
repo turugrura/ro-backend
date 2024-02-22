@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"ro-backend/configuration"
 	"strings"
@@ -30,7 +29,6 @@ func userGuard(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Printf("Authenticated user %s\n", claims.Issuer)
 		r.Header.Add("userId", claims.Issuer)
 
 		// Pass down the request to the next middleware (or final handler)

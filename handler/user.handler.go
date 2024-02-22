@@ -12,7 +12,7 @@ type userHandler struct {
 }
 
 type UserHandler interface {
-	GetMyProfile(res http.ResponseWriter, req *http.Request)
+	GetMyProfile(http.ResponseWriter, *http.Request)
 }
 
 func NewUserHandler(userService service.UserService) UserHandler {
@@ -20,16 +20,16 @@ func NewUserHandler(userService service.UserService) UserHandler {
 }
 
 type GetMyProfileResponse struct {
-	Id        string
-	Name      string
-	Email     string
-	Status    string
-	Role      string
-	CreatedAt string
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Status    string `json:"status"`
+	Role      string `json:"role"`
+	CreatedAt string `json:"createdAt"`
 }
 
-func (h userHandler) GetMyProfile(res http.ResponseWriter, req *http.Request) {
-	userId := req.Header.Get("userId")
+func (h userHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
+	userId := r.Header.Get("userId")
 
 	user, err := h.userService.FindUserById(userId)
 	if err != nil {
@@ -46,5 +46,5 @@ func (h userHandler) GetMyProfile(res http.ResponseWriter, req *http.Request) {
 		CreatedAt: user.CreatedAt,
 	}
 
-	json.NewEncoder(res).Encode(response)
+	json.NewEncoder(w).Encode(response)
 }
