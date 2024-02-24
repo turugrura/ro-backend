@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"ro-backend/repository"
 	"ro-backend/service"
@@ -113,7 +112,6 @@ func (h roPresetHandler) GetByClassTag(w http.ResponseWriter, r *http.Request) {
 
 	items := []GetByClassTagItem{}
 	for _, v := range res.Items {
-		fmt.Println("id", v.Id)
 		items = append(items, GetByClassTagItem{
 			Id:    v.Id,
 			Name:  v.Name,

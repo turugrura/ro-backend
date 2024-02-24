@@ -4,9 +4,11 @@ go 1.22.0
 
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.1.1
 	github.com/spf13/viper v1.18.2
 	go.mongodb.org/mongo-driver v1.13.1
+	golang.org/x/time v0.5.0
 )
 
 require (
@@ -15,7 +17,6 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.0 // indirect

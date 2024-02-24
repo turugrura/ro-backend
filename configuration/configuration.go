@@ -28,12 +28,24 @@ type JwtConfig struct {
 	RefreshTokenPeriodInDays   int
 }
 
+type RoConfig struct {
+	PresetLimit int
+}
+
+type SecurityConfig struct {
+	AllowedOrigin string
+}
+
 type AppConfig struct {
-	Port       int
-	Mongodb    MongoDbConfig
-	Auth       AuthConfig
-	GoogleAuth AuthProviderConfig
-	Jwt        JwtConfig
+	Port int
+	// dev, prod
+	Environment string
+	Security    SecurityConfig
+	Mongodb     MongoDbConfig
+	Auth        AuthConfig
+	GoogleAuth  AuthProviderConfig
+	Jwt         JwtConfig
+	Ro          RoConfig
 }
 
 var Config *AppConfig
@@ -41,7 +53,11 @@ var Config *AppConfig
 func getAppConfig() AppConfig {
 	if Config == nil {
 		Config = &AppConfig{
-			Port: viper.GetInt("app.port"),
+			Port:        viper.GetInt("app.port"),
+			Environment: viper.GetString("app.env"),
+			Security: SecurityConfig{
+				AllowedOrigin: viper.GetString("security.allowOrigin"),
+			},
 			Mongodb: MongoDbConfig{
 				ConnectionStr: viper.GetString("mongodb.connectionString"),
 				DbName:        viper.GetString("mongodb.dbName"),
@@ -59,6 +75,9 @@ func getAppConfig() AppConfig {
 				Secret:                     viper.GetString("jwt.secret"),
 				AccessTokenPeriodInMinutes: viper.GetInt("jwt.accessTokenPeriodInMinutes"),
 				RefreshTokenPeriodInDays:   viper.GetInt("jwt.refreshTokenPeriodInDays"),
+			},
+			Ro: RoConfig{
+				PresetLimit: viper.GetInt("ro.preset.limitPerUser"),
 			},
 		}
 	}

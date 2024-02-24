@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"log"
@@ -20,6 +21,7 @@ import (
 	"github.com/markbates/goth/providers/google"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/time/rate"
 )
 
 var userCollection *mongo.Collection
@@ -28,6 +30,8 @@ var refreshTokenCollection *mongo.Collection
 var roPresetCollection *mongo.Collection
 
 var appConfig configuration.AppConfig
+
+var limiter = rate.NewLimiter(1, 3)
 
 func main() {
 	initTimeZone()
@@ -63,6 +67,8 @@ func main() {
 
 	r := newAppRouter(mux.NewRouter())
 	r.use(jsonResponseMiddleware)
+	r.use(setSecurityHeadersMiddleware)
+	r.use(rateLimitMiddleware)
 
 	r.get("/auth/{provider}/callback", authHandler.AuthenticationCallback)
 	r.get("/auth/{provider}", gothic.BeginAuthHandler)
@@ -94,7 +100,7 @@ func main() {
 func initSessionStore() {
 	key := appConfig.Auth.AuthenticationSessionSecret // Replace with your SESSION_SECRET or similar
 	maxAge := int(time.Hour * 6)                      //
-	isProd := false                                   // Set to true when serving over https
+	isProd := appConfig.Environment == "prod"         // Set to true when serving over https
 
 	store := sessions.NewCookieStore([]byte(key))
 	store.MaxAge(maxAge)
@@ -125,6 +131,26 @@ func initTimeZone() {
 func jsonResponseMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func setSecurityHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Max-Age", "86400")
+		w.Header().Add("Access-Control-Allow-Origin", appConfig.Security.AllowedOrigin)
+		w.Header().Add("Access-Control-Allow-Methods", strings.Join([]string{http.MethodGet, http.MethodPost, http.MethodDelete}, ","))
+		next.ServeHTTP(w, r)
+	})
+}
+
+func rateLimitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !limiter.Allow() {
+			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }

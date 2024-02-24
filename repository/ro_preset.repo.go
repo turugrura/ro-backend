@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -180,15 +179,10 @@ func (r roPresetRepo) UpdatePreset(i UpdatePresetInput) error {
 }
 
 func (r roPresetRepo) FindPresetById(i FindPresetByIdInput) (*RoPreset, error) {
-	var opt = options.FindOneOptions{
-		Projection: bson.M{
-			"model": 0,
-		},
-	}
-	fmt.Println("i.InCludeModel", i.InCludeModel)
-	if i.InCludeModel {
+	var opt = options.FindOneOptions{}
+	if !i.InCludeModel {
 		opt.Projection = bson.M{
-			"model": 1,
+			"model": 0,
 		}
 	}
 
