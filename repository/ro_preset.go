@@ -1,6 +1,6 @@
 package repository
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import "time"
 
 type PresetModel struct {
 	Class                 int            `bson:"class" json:"class"`
@@ -61,12 +61,15 @@ type PresetModel struct {
 }
 
 type RoPreset struct {
-	Id        string      `bson:"_id,omitempty" json:"id"`
+	Id        string      `bson:"id" json:"id"`
 	UserId    string      `bson:"user_id" json:"userId"`
+	Name      string      `bson:"name" json:"name"`
 	Label     string      `bson:"label" json:"label"`
 	Model     PresetModel `bson:"model" json:"model"`
-	CreatedAt string      `bson:"created_at"`
-	UpdatedAt string      `bson:"updated_at"`
+	ClassId   int         `bson:"class_id" json:"classId"`
+	Tags      []string    `bson:"tags" json:"tags"`
+	CreatedAt time.Time   `bson:"created_at" json:"createdAt"`
+	UpdatedAt time.Time   `bson:"updated_at" json:"updatedAt"`
 }
 
 type CreatePresetInput struct {
@@ -76,10 +79,13 @@ type CreatePresetInput struct {
 }
 
 type UpdatePresetInput struct {
-	Id     string      `bson:"_id,omitempty" json:"id"`
-	UserId string      `bson:"user_id" json:"userId"`
-	Label  string      `bson:"label" json:"label"`
-	Model  PresetModel `bson:"model" json:"model"`
+	Id        string       `bson:"id,omitempty" json:"id"`
+	ClassId   int          `bson:"class_id,omitempty" json:"classId"`
+	UserId    string       `bson:"user_id,omitempty" json:"userId"`
+	Label     string       `bson:"label,omitempty" json:"label"`
+	Model     *PresetModel `bson:"model,omitempty" json:"model"`
+	Tags      []string     `bson:"tags,omitempty" json:"tags"`
+	UpdatedAt time.Time    `bson:"updated_at" json:"updatedAt"`
 }
 
 type BulkCreatePresetInput struct {
@@ -90,22 +96,33 @@ type BulkCreatePresetInput struct {
 	} `json:"bulkData"`
 }
 
-type PartialSearchRoPreset struct {
-	Id     primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	UserId string             `bson:"user_id,omitempty" json:"userId"`
-	Label  string             `bson:"label,omitempty" json:"label"`
+type PartialSearchRoPresetInput struct {
+	Id           *string `bson:"id,omitempty"`
+	UserId       *string `bson:"user_id,omitempty"`
+	ClassId      *int    `bson:"class_id,omitempty"`
+	Label        *string `bson:"label,omitempty"`
+	Tag          *string `bson:"tag,omitempty"`
+	Skip         *int
+	Take         *int
+	InCludeModel bool
 }
 
-type FindPreset struct {
-	Id    string `bson:"_id,omitempty" json:"id"`
-	Label string `bson:"label" json:"label"`
+type PartialSearchRoPresetResult struct {
+	Items []RoPreset
+	Total int64
+}
+
+type FindPresetByIdInput struct {
+	Id           string
+	InCludeModel bool
 }
 
 type RoPresetRepository interface {
-	FindPresetById(string) (*RoPreset, error)
-	FindPresetsByUserId(string) (*[]FindPreset, error)
+	FindPresetById(FindPresetByIdInput) (*RoPreset, error)
+	FindPresetByIds([]string) (*[]RoPreset, error)
+	PartialSearchPresets(PartialSearchRoPresetInput) (*PartialSearchRoPresetResult, error)
 	CreatePreset(CreatePresetInput) (*RoPreset, error)
-	UpdatePreset(UpdatePresetInput) (*RoPreset, error)
 	CreatePresets(BulkCreatePresetInput) (*[]RoPreset, error)
+	UpdatePreset(UpdatePresetInput) error
 	DeletePresetById(string) (*int, error)
 }

@@ -16,4 +16,5 @@ type AuthenticationDataService interface {
 	CreateAuthenticationData(AuthenticationDataRequest) (*AuthenticationData, error)
 	FindAuthenticationDataByCode(string) (*AuthenticationData, error)
 	FindAuthenticationDataByEmail(string) (*AuthenticationData, error)
+	DeleteAuthenticationData(string) error
 }

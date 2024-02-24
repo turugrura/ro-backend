@@ -2,10 +2,13 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func NewRoPresetRepository(collection *mongo.Collection) RoPresetRepository {
@@ -16,14 +19,81 @@ type roPresetRepo struct {
 	collection *mongo.Collection
 }
 
-// DeletePresetById implements RoPresetRepository.
-func (r roPresetRepo) DeletePresetById(id string) (*int, error) {
-	objectId, err := primitive.ObjectIDFromHex(id)
+// FindPresetByIds implements RoPresetRepository.
+func (r roPresetRepo) FindPresetByIds(ids []string) (*[]RoPreset, error) {
+	r.collection.Find(context.Background(), bson.M{
+		"id": bson.M{
+			"$in": ids,
+		},
+	})
+
+	return nil, nil
+}
+
+// PartialSearchPresets implements RoPresetRepository.
+func (r roPresetRepo) PartialSearchPresets(i PartialSearchRoPresetInput) (*PartialSearchRoPresetResult, error) {
+	filter := bson.M{}
+	if i.ClassId != nil {
+		filter["class_id"] = *i.ClassId
+	}
+	if i.Id != nil {
+		filter["id"] = *i.Id
+	}
+	if i.Tag != nil {
+		filter["tags"] = bson.M{
+			"$in": []string{*i.Tag},
+		}
+	}
+	if i.UserId != nil {
+		filter["user_id"] = *i.UserId
+	}
+
+	total, err := r.collection.CountDocuments(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := r.collection.DeleteOne(context.Background(), objectId)
+	skip := int64(0)
+	if i.Skip != nil {
+		skip = int64(*i.Skip)
+	}
+
+	take := total
+	if i.Take != nil {
+		take = int64(*i.Take)
+	}
+
+	var opt = options.FindOptions{}
+	if !i.InCludeModel {
+		opt.Projection = bson.M{
+			"model": 0,
+		}
+	}
+
+	cursor, err := r.collection.Find(context.Background(), filter, &options.FindOptions{
+		Projection: opt.Projection,
+		Skip:       &skip,
+		Limit:      &take,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	items := []RoPreset{}
+	err = cursor.All(context.Background(), &items)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PartialSearchRoPresetResult{
+		Items: items,
+		Total: total,
+	}, nil
+}
+
+// DeletePresetById implements RoPresetRepository.
+func (r roPresetRepo) DeletePresetById(id string) (*int, error) {
+	res, err := r.collection.DeleteOne(context.Background(), PartialSearchRoPresetInput{Id: &id})
 	if err != nil {
 		return nil, err
 	}
@@ -35,17 +105,22 @@ func (r roPresetRepo) DeletePresetById(id string) (*int, error) {
 
 // CreatePreset implements RoPresetRepository.
 func (r roPresetRepo) CreatePreset(i CreatePresetInput) (*RoPreset, error) {
-	res, err := r.collection.InsertOne(context.Background(), RoPreset{
-		UserId: i.UserId,
-		Label:  i.Label,
-		Model:  i.Model,
+	id := uuid.NewString()
+	_, err := r.collection.InsertOne(context.Background(), RoPreset{
+		Id:        id,
+		UserId:    i.UserId,
+		Label:     i.Label,
+		Model:     i.Model,
+		ClassId:   i.Model.Class,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &RoPreset{
-		Id:     res.InsertedID.(primitive.ObjectID).Hex(),
+		Id:     id,
 		UserId: i.UserId,
 		Label:  i.Label,
 		Model:  i.Model,
@@ -58,11 +133,13 @@ func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) (*[]RoPreset, erro
 	for i := 0; i < len(ip.BulkData); i++ {
 		var cur = ip.BulkData[i]
 		var p = RoPreset{
+			Id:        uuid.NewString(),
 			UserId:    ip.UserId,
 			Label:     cur.Label,
 			Model:     cur.Model,
-			CreatedAt: time.Now().Format(time.RFC3339),
-			UpdatedAt: time.Now().Format(time.RFC3339),
+			ClassId:   cur.Model.Class,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		models = append(models, mongo.NewInsertOneModel().SetDocument(p))
 	}
@@ -85,69 +162,41 @@ func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) (*[]RoPreset, erro
 }
 
 // UpdatePreset implements RoPresetRepository.
-func (r roPresetRepo) UpdatePreset(i UpdatePresetInput) (*RoPreset, error) {
-	objectId, err := primitive.ObjectIDFromHex(i.Id)
-	if err != nil {
-		return nil, err
+func (r roPresetRepo) UpdatePreset(i UpdatePresetInput) error {
+	i.UpdatedAt = time.Now()
+
+	if i.Model != nil {
+		i.ClassId = i.Model.Class
 	}
 
-	_, err = r.collection.UpdateByID(context.Background(), objectId, UpdatePresetInput{
-		UserId: i.UserId,
-		Label:  i.Label,
-		Model:  i.Model,
+	_, err := r.collection.UpdateOne(context.Background(), PartialSearchRoPresetInput{Id: &i.Id}, bson.M{
+		"$set": i,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &RoPreset{
-		Id:     i.Id,
-		UserId: i.UserId,
-		Label:  i.Label,
-		Model:  i.Model,
-	}, nil
+	return nil
 }
 
-// FindPresetById implements RoPresetRepository.
-func (r roPresetRepo) FindPresetById(id string) (*RoPreset, error) {
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
+func (r roPresetRepo) FindPresetById(i FindPresetByIdInput) (*RoPreset, error) {
+	var opt = options.FindOneOptions{
+		Projection: bson.M{
+			"model": 0,
+		},
+	}
+	fmt.Println("i.InCludeModel", i.InCludeModel)
+	if i.InCludeModel {
+		opt.Projection = bson.M{
+			"model": 1,
+		}
 	}
 
 	var data RoPreset
-	err = r.collection.FindOne(context.Background(), PartialSearchRoPreset{Id: objectId}).Decode(&data)
+	err := r.collection.FindOne(context.Background(), PartialSearchRoPresetInput{Id: &i.Id}, &opt).Decode(&data)
 	if err != nil {
 		return nil, err
 	}
 
 	return &data, nil
-}
-
-// FindPresetsByUserId implements RoPresetRepository.
-func (r roPresetRepo) FindPresetsByUserId(userId string) (*[]FindPreset, error) {
-	cursor, err := r.collection.Find(context.Background(), PartialSearchRoPreset{
-		UserId: userId,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var presets = []FindPreset{}
-
-	for cursor.Next(context.Background()) {
-		var res RoPreset
-		if err := cursor.Decode(&res); err != nil {
-			return nil, err
-		}
-		presets = append(presets, FindPreset{
-			Id:    res.Id,
-			Label: res.Label,
-		})
-	}
-	if err := cursor.Err(); err != nil {
-		return nil, err
-	}
-
-	return &presets, nil
 }

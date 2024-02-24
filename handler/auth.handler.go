@@ -93,6 +93,12 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: generatedToken.RefreshToken,
 	}
 
+	err = h.authenticationDataService.DeleteAuthenticationData(authorizationCode)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	json.NewEncoder(w).Encode(loginResponse)
 }
 

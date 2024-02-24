@@ -16,4 +16,5 @@ type AuthenticationDataRepository interface {
 	CreateAuthenticationData(CreateAuthenticationDataInput) (*AuthenticationData, error)
 	GetAuthenticationById(string) (*AuthenticationData, error)
 	GetAuthenticationByEmail(string) (*AuthenticationData, error)
+	DeleteAuthenticationDataById(string) error
 }

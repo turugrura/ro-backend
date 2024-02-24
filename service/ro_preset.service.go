@@ -13,64 +13,116 @@ type roPresetService struct {
 	repo repository.RoPresetRepository
 }
 
-func (s roPresetService) ValidatePresetOwner(i CheckPresetOwnerInput) error {
-	res, err := s.repo.FindPresetById(i.Id)
-	if err != nil {
-		return err
-	}
+func (s roPresetService) FindPresetsByTags(r FindPresetsByTagsRequest) (*repository.PartialSearchRoPresetResult, error) {
+	res, err := s.repo.PartialSearchPresets(repository.PartialSearchRoPresetInput{
+		ClassId:      &r.ClassId,
+		Tag:          &r.Tag,
+		Skip:         &r.Skip,
+		Take:         &r.Take,
+		InCludeModel: true,
+	})
 
-	if res.UserId != i.UserId {
-		return fmt.Errorf("not my preset")
-	}
-
-	return nil
-}
-
-// UpdatePreset implements RoPresetService.
-func (s roPresetService) UpdatePreset(i repository.UpdatePresetInput) (*repository.RoPreset, error) {
-	err := s.ValidatePresetOwner(CheckPresetOwnerInput{Id: i.Id, UserId: i.UserId})
 	if err != nil {
 		return nil, err
 	}
 
-	return s.repo.UpdatePreset(i)
+	return res, nil
 }
 
-// DeletePresetById implements RoPresetService.
-func (s roPresetService) DeletePresetById(i CheckPresetOwnerInput) (*int, error) {
-	err := s.ValidatePresetOwner(CheckPresetOwnerInput{Id: i.Id, UserId: i.UserId})
+func (s roPresetService) AddTags(r AddTagsRequest) (*repository.RoPreset, error) {
+	preset, err := s.ValidatePresetOwner(CheckPresetOwnerRequest{Id: r.Id, UserId: r.UserId})
 	if err != nil {
 		return nil, err
 	}
 
-	return s.repo.DeletePresetById(i.Id)
+	err = s.repo.UpdatePreset(repository.UpdatePresetInput{
+		Id:   preset.Id,
+		Tags: r.Tags,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.FindPresetById(repository.FindPresetByIdInput{
+		Id:           r.Id,
+		InCludeModel: false,
+	})
 }
 
-// BulkCreatePresets implements RoPresetService.
-func (s roPresetService) BulkCreatePresets(i repository.BulkCreatePresetInput) (*[]repository.RoPreset, error) {
-	return s.repo.CreatePresets(i)
+func (s roPresetService) ValidatePresetOwner(r CheckPresetOwnerRequest) (*repository.RoPreset, error) {
+	res, err := s.repo.FindPresetById(repository.FindPresetByIdInput{
+		Id:           r.Id,
+		InCludeModel: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if res.UserId != r.UserId {
+		return nil, fmt.Errorf("not my preset")
+	}
+
+	return res, nil
 }
 
-// FindPresetsByUserId implements RoPresetService.
-func (s roPresetService) FindPresetsByUserId(userId string) (*[]repository.FindPreset, error) {
-	return s.repo.FindPresetsByUserId(userId)
+func (s roPresetService) UpdatePreset(r repository.UpdatePresetInput) (*repository.RoPreset, error) {
+	_, err := s.ValidatePresetOwner(CheckPresetOwnerRequest{Id: r.Id, UserId: r.UserId})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.repo.UpdatePreset(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.FindPresetById(repository.FindPresetByIdInput{
+		Id:           r.Id,
+		InCludeModel: false,
+	})
 }
 
-// CreatePreset implements RoPresetService.
+func (s roPresetService) DeletePresetById(r CheckPresetOwnerRequest) (*int, error) {
+	_, err := s.ValidatePresetOwner(CheckPresetOwnerRequest{Id: r.Id, UserId: r.UserId})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.DeletePresetById(r.Id)
+}
+
+func (s roPresetService) BulkCreatePresets(r repository.BulkCreatePresetInput) (*[]repository.RoPreset, error) {
+	return s.repo.CreatePresets(r)
+}
+
+func (s roPresetService) FindPresetsByUserId(userId string) (*[]repository.RoPreset, error) {
+	res, err := s.repo.PartialSearchPresets(repository.PartialSearchRoPresetInput{
+		UserId:       &userId,
+		InCludeModel: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.Items, nil
+}
+
 func (s roPresetService) CreatePreset(r repository.CreatePresetInput) (*repository.RoPreset, error) {
 	res, err := s.repo.CreatePreset(r)
 
 	return (*repository.RoPreset)(res), err
 }
 
-// FindPresetById implements RoPresetService.
-func (s roPresetService) FindPresetById(i CheckPresetOwnerInput) (*repository.RoPreset, error) {
-	err := s.ValidatePresetOwner(CheckPresetOwnerInput{Id: i.Id, UserId: i.UserId})
+func (s roPresetService) FindPresetById(r CheckPresetOwnerRequest) (*repository.RoPreset, error) {
+	_, err := s.ValidatePresetOwner(CheckPresetOwnerRequest{Id: r.Id, UserId: r.UserId})
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := s.repo.FindPresetById(i.Id)
+	res, err := s.repo.FindPresetById(repository.FindPresetByIdInput{
+		Id:           r.Id,
+		InCludeModel: true,
+	})
 
 	return (*repository.RoPreset)(res), err
 }

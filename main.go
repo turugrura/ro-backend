@@ -73,15 +73,18 @@ func main() {
 	me := r.subRouter("/me")
 	me.use(userGuard)
 	me.get("", userHandler.GetMyProfile)
+	me.post("/bulk_ro_presets", roPresetHandler.BulkCreatePresets)
 	me.get("/ro_presets", roPresetHandler.GetMyPresets)
+	me.post("/ro_presets", roPresetHandler.CreatePreset)
+
+	me.get("/ro_presets/{presetId}", roPresetHandler.GetMyPresetById)
+	me.post("/ro_presets/{presetId}", roPresetHandler.UpdateMyPreset)
+	me.delete("/ro_presets/{presetId}", roPresetHandler.DeleteById)
+	me.post("/ro_presets/{presetId}/tags", roPresetHandler.AddTags)
 
 	ro := r.subRouter("/ro_presets")
 	ro.use(userGuard)
-	ro.post("", roPresetHandler.CreatePreset)
-	ro.post("/bulk", roPresetHandler.BulkCreatePresets)
-	ro.get("/{presetId}", roPresetHandler.GetPresetById)
-	ro.post("/{presetId}", roPresetHandler.UpdatePreset)
-	ro.delete("/{presetId}", roPresetHandler.DeleteById)
+	ro.get("/class_by_tags/{classId}/{tag}", roPresetHandler.GetByClassTag)
 
 	appPort := appConfig.Port
 	log.Printf("listening on localhost:%v\n", appPort)

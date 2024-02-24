@@ -6,6 +6,10 @@ type authenticationDataService struct {
 	repo repository.AuthenticationDataRepository
 }
 
+func (s authenticationDataService) DeleteAuthenticationData(id string) error {
+	return s.repo.DeleteAuthenticationDataById(id)
+}
+
 func NewAuthenticationDataService(repo repository.AuthenticationDataRepository) AuthenticationDataService {
 	return authenticationDataService{repo: repo}
 }

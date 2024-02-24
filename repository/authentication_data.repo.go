@@ -14,19 +14,32 @@ type authenticationDataRepo struct {
 	collection *mongo.Collection
 }
 
+func (r authenticationDataRepo) DeleteAuthenticationDataById(id string) error {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.collection.DeleteOne(context.Background(), bson.M{"_id": objectId})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func NewAuthenticationDataRepo(collection *mongo.Collection) AuthenticationDataRepository {
 	return authenticationDataRepo{collection: collection}
 }
 
-func (repo authenticationDataRepo) GetAuthenticationById(id string) (*AuthenticationData, error) {
+func (r authenticationDataRepo) GetAuthenticationById(id string) (*AuthenticationData, error) {
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
 	var authenticationData AuthenticationData
-	err = repo.collection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&authenticationData)
+	err = r.collection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&authenticationData)
 	if err != nil {
 		return nil, err
 	}
@@ -34,9 +47,9 @@ func (repo authenticationDataRepo) GetAuthenticationById(id string) (*Authentica
 	return &authenticationData, nil
 }
 
-func (repo authenticationDataRepo) GetAuthenticationByEmail(email string) (*AuthenticationData, error) {
+func (r authenticationDataRepo) GetAuthenticationByEmail(email string) (*AuthenticationData, error) {
 	var authenticationData AuthenticationData
-	err := repo.collection.FindOne(context.Background(), bson.M{"email": email}).Decode(&authenticationData)
+	err := r.collection.FindOne(context.Background(), bson.M{"email": email}).Decode(&authenticationData)
 	if err != nil {
 		return nil, err
 	}
