@@ -13,12 +13,14 @@ type ErrorResponse struct {
 }
 
 const (
-	ErrForbidden              = "forbidden"
-	ErrUnAuthentication       = "unAuthentication"
 	ErrUnverifiedEmail        = "Email is unverified"
 	ErrEmptyEmail             = "Email is empty"
-	ErrUserNotFound           = "User not found"
 	ErrNotTimeForRefreshToken = "token is not valid yet"
+	ErrUserNotFound           = "User not found"
+
+	ErrForbidden        = "forbidden"
+	ErrUnAuthentication = "unAuthentication"
+	ErrNotMyPreset      = "not my preset"
 )
 
 func WriteErr(w http.ResponseWriter, msg string) {
@@ -26,6 +28,9 @@ func WriteErr(w http.ResponseWriter, msg string) {
 	var httpStatus = http.StatusInternalServerError
 
 	switch msg {
+	case ErrNotMyPreset:
+		httpStatus = http.StatusNotFound
+		message = http.StatusText(httpStatus)
 	case mongo.ErrNoDocuments.Error():
 		httpStatus = http.StatusNotFound
 		message = http.StatusText(httpStatus)

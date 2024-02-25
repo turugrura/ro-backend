@@ -20,12 +20,13 @@ func NewUserRepo(collection *mongo.Collection) UserRepository {
 
 func (repo userRepo) CreateUser(input CreateUserInput) (*User, error) {
 	var newUser = User{
-		Name:      input.Name,
-		Email:     input.Email,
-		Role:      input.Role,
-		Status:    UserStatus.Active,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Name:            input.Name,
+		Email:           input.Email,
+		Role:            input.Role,
+		RegisterChannel: input.RegisterChannel,
+		Status:          UserStatus.Active,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 	result, err := repo.collection.InsertOne(context.Background(), newUser)
 	if err != nil {

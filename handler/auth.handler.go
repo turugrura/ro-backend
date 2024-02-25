@@ -7,7 +7,10 @@ import (
 	"ro-backend/configuration"
 	"ro-backend/service"
 	"strconv"
+	"strings"
 
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/markbates/goth/gothic"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -85,7 +88,7 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.authenticationDataService.DeleteAuthenticationData(p.AuthorizationCode)
+	err = h.authenticationDataService.DeleteAuthenticationDataByEmail(authData.Email)
 	if err != nil {
 		WriteErr(w, err.Error())
 		return
@@ -124,11 +127,16 @@ func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	provider := mux.Vars(r)["provider"]
+
 	user, err := h.userService.FindUserByEmail(userInfo.Email)
 	if err == mongo.ErrNoDocuments {
+		name := strings.Split(userInfo.Email, "@")[0]
+
 		user, err = h.userService.CreateUser(service.CreateUserRequest{
-			Name:  "Unknown",
-			Email: userInfo.Email,
+			Name:    name,
+			Email:   userInfo.Email,
+			Channel: provider,
 		})
 
 		if err != nil {
@@ -140,16 +148,18 @@ func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	createdAuthData, err := h.authenticationDataService.CreateAuthenticationData(service.AuthenticationDataRequest{
-		AuthReference: "google",
-		Email:         user.Email,
+	code := uuid.NewString()
+	_, err = h.authenticationDataService.CreateAuthenticationData(service.AuthenticationDataRequest{
+		Channel: provider,
+		Email:   user.Email,
+		Code:    code,
 	})
 	if err != nil {
 		WriteErr(w, err.Error())
 		return
 	}
 
-	var redirectUrl = fmt.Sprintf("%v?%v=%v", configuration.Config.Auth.PostAuthenticationRedirectUrl, "auth_code", createdAuthData.Code)
+	var redirectUrl = fmt.Sprintf("%v?%v=%v", configuration.Config.Auth.PostAuthenticationRedirectUrl, "auth_code", code)
 
 	http.Redirect(w, r, redirectUrl, http.StatusPermanentRedirect)
 }

@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"ro-backend/repository"
-	"strings"
 )
 
 type userService struct {
@@ -28,15 +27,14 @@ func NewUserService(userRepo repository.UserRepository) UserService {
 func (s userService) CreateUser(req CreateUserRequest) (*repository.User, error) {
 	existedUser, _ := s.userRepository.FindUserByEmail(req.Email)
 	if existedUser != nil {
-		return nil, fmt.Errorf("email '%v' already registered", req.Email)
+		return nil, fmt.Errorf("email already registered")
 	}
 
-	name := strings.Split(req.Email, "@")[0]
-
 	var user = repository.CreateUserInput{
-		Name:  name,
-		Email: req.Email,
-		Role:  repository.UserRole.User,
+		Name:            req.Name,
+		Email:           req.Email,
+		Role:            repository.UserRole.User,
+		RegisterChannel: req.Channel,
 	}
 	return s.userRepository.CreateUser(user)
 }

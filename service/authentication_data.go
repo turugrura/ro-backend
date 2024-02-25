@@ -1,22 +1,18 @@
 package service
 
-import "time"
-
-type AuthenticationData struct {
-	AuthReference string
-	Code          string
-	CreatedAt     time.Time
-	Email         string
-}
+import (
+	"ro-backend/repository"
+)
 
 type AuthenticationDataRequest struct {
-	AuthReference string
-	Email         string
+	Channel string
+	Email   string
+	Code    string
 }
 
 type AuthenticationDataService interface {
-	CreateAuthenticationData(AuthenticationDataRequest) (*AuthenticationData, error)
-	FindAuthenticationDataByCode(string) (*AuthenticationData, error)
-	FindAuthenticationDataByEmail(string) (*AuthenticationData, error)
+	CreateAuthenticationData(AuthenticationDataRequest) (*repository.AuthenticationData, error)
+	FindAuthenticationDataByCode(string) (*repository.AuthenticationData, error)
 	DeleteAuthenticationData(string) error
+	DeleteAuthenticationDataByEmail(string) error
 }

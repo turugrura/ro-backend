@@ -23,19 +23,21 @@ var UserRole = Role{
 }
 
 type User struct {
-	Id        string    `bson:"_id,omitempty"`
-	Name      string    `bson:"name"`
-	Email     string    `bson:"email"`
-	Status    string    `bson:"status"`
-	Role      string    `bson:"role"`
-	CreatedAt time.Time `bson:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at"`
+	Id              string    `bson:"_id,omitempty"`
+	Name            string    `bson:"name"`
+	Email           string    `bson:"email"`
+	Status          string    `bson:"status"`
+	Role            string    `bson:"role"`
+	RegisterChannel string    `bson:"register_channel"`
+	CreatedAt       time.Time `bson:"created_at"`
+	UpdatedAt       time.Time `bson:"updated_at"`
 }
 
 type CreateUserInput struct {
-	Name  string
-	Email string
-	Role  string
+	Name            string
+	Email           string
+	Role            string
+	RegisterChannel string
 }
 
 type UpdateUserInput struct {

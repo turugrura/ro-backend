@@ -5,8 +5,9 @@ import (
 )
 
 type CreateUserRequest struct {
-	Name  string
-	Email string
+	Name    string
+	Email   string
+	Channel string
 }
 
 type PatchUserRequest struct {

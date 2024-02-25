@@ -18,7 +18,6 @@ type roPresetRepo struct {
 	collection *mongo.Collection
 }
 
-// FindPresetByIds implements RoPresetRepository.
 func (r roPresetRepo) FindPresetByIds(ids []string) (*[]RoPreset, error) {
 	r.collection.Find(context.Background(), bson.M{
 		"id": bson.M{
@@ -29,7 +28,6 @@ func (r roPresetRepo) FindPresetByIds(ids []string) (*[]RoPreset, error) {
 	return nil, nil
 }
 
-// PartialSearchPresets implements RoPresetRepository.
 func (r roPresetRepo) PartialSearchPresets(i PartialSearchRoPresetInput) (*PartialSearchRoPresetResult, error) {
 	filter := bson.M{}
 	if i.ClassId != nil {
@@ -90,7 +88,6 @@ func (r roPresetRepo) PartialSearchPresets(i PartialSearchRoPresetInput) (*Parti
 	}, nil
 }
 
-// DeletePresetById implements RoPresetRepository.
 func (r roPresetRepo) DeletePresetById(id string) (*int, error) {
 	res, err := r.collection.DeleteOne(context.Background(), IdSearchInput{Id: id})
 	if err != nil {
@@ -102,7 +99,6 @@ func (r roPresetRepo) DeletePresetById(id string) (*int, error) {
 	return &i, nil
 }
 
-// CreatePreset implements RoPresetRepository.
 func (r roPresetRepo) CreatePreset(i CreatePresetInput) (*RoPreset, error) {
 	id := uuid.NewString()
 	_, err := r.collection.InsertOne(context.Background(), RoPreset{
@@ -126,7 +122,6 @@ func (r roPresetRepo) CreatePreset(i CreatePresetInput) (*RoPreset, error) {
 	}, nil
 }
 
-// CreatePresets implements RoPresetRepository.
 func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) (*[]RoPreset, error) {
 	var models []mongo.WriteModel
 	for i := 0; i < len(ip.BulkData); i++ {
@@ -160,7 +155,6 @@ func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) (*[]RoPreset, erro
 	return &presets, nil
 }
 
-// UpdatePreset implements RoPresetRepository.
 func (r roPresetRepo) UpdatePreset(i UpdatePresetInput) error {
 	i.UpdatedAt = time.Now()
 
