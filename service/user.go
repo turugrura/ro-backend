@@ -1,21 +1,22 @@
 package service
 
-type UserResponse struct {
-	Id        string
-	Name      string
-	Email     string
-	Status    string
-	Role      string
-	CreatedAt string
-}
+import (
+	"ro-backend/repository"
+)
 
 type CreateUserRequest struct {
 	Name  string
 	Email string
 }
 
+type PatchUserRequest struct {
+	Id   string
+	Name string
+}
+
 type UserService interface {
-	CreateUser(CreateUserRequest) (*UserResponse, error)
-	FindUserById(string) (*UserResponse, error)
-	FindUserByEmail(string) (*UserResponse, error)
+	CreateUser(CreateUserRequest) (*repository.User, error)
+	PatchUser(PatchUserRequest) (*repository.User, error)
+	FindUserById(string) (*repository.User, error)
+	FindUserByEmail(string) (*repository.User, error)
 }

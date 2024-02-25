@@ -1,10 +1,12 @@
 package repository
 
+import "time"
+
 type AuthenticationData struct {
-	Id            string `bson:"_id,omitempty"`
-	AuthReference string `bson:"auth_reference"`
-	CreatedAt     string `bson:"created_at"`
-	Email         string `bson:"email"`
+	Id            string    `bson:"_id,omitempty"`
+	AuthReference string    `bson:"auth_reference"`
+	Email         string    `bson:"email"`
+	CreatedAt     time.Time `bson:"created_at"`
 }
 
 type CreateAuthenticationDataInput struct {

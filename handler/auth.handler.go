@@ -30,10 +30,6 @@ type AuthHandlerParam struct {
 	TokenService              service.TokenService
 }
 
-func NewAuthHandler(param AuthHandlerParam) AuthHandler {
-	return authHandler{userService: param.UserService, authenticationDataService: param.AuthenticationDataService, tokenService: param.TokenService}
-}
-
 type LoginRequest struct {
 	AuthorizationCode string `json:"authorizationCode"`
 }
@@ -45,6 +41,10 @@ type LoginResponse struct {
 
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refreshToken"`
+}
+
+func NewAuthHandler(param AuthHandlerParam) AuthHandler {
+	return authHandler{userService: param.UserService, authenticationDataService: param.AuthenticationDataService, tokenService: param.TokenService}
 }
 
 func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {

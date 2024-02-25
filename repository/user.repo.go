@@ -24,7 +24,8 @@ func (repo userRepo) CreateUser(input CreateUserInput) (*User, error) {
 		Email:     input.Email,
 		Role:      input.Role,
 		Status:    UserStatus.Active,
-		CreatedAt: time.Now().Format(time.RFC3339),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 	result, err := repo.collection.InsertOne(context.Background(), newUser)
 	if err != nil {
@@ -36,7 +37,25 @@ func (repo userRepo) CreateUser(input CreateUserInput) (*User, error) {
 	return &newUser, nil
 }
 
-func (repo userRepo) FindUserById(id string) (*User, error) {
+func (r userRepo) PatchUser(id string, u UpdateUserInput) error {
+	objId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	u.UpdatedAt = time.Now()
+
+	_, err = r.collection.UpdateByID(context.Background(), objId, bson.M{
+		"$set": u,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r userRepo) FindUserById(id string) (*User, error) {
 	var user = User{}
 
 	objectId, err := primitive.ObjectIDFromHex(id)
@@ -44,7 +63,7 @@ func (repo userRepo) FindUserById(id string) (*User, error) {
 		return nil, err
 	}
 
-	err = repo.collection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&user)
+	err = r.collection.FindOne(context.Background(), bson.M{"_id": objectId}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -52,9 +71,9 @@ func (repo userRepo) FindUserById(id string) (*User, error) {
 	return &user, nil
 }
 
-func (repo userRepo) FindUserByEmail(email string) (*User, error) {
+func (r userRepo) FindUserByEmail(email string) (*User, error) {
 	var user = User{}
-	err := repo.collection.FindOne(context.Background(), bson.M{"email": email}).Decode(&user)
+	err := r.collection.FindOne(context.Background(), bson.M{"email": email}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}

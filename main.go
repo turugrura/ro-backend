@@ -80,6 +80,7 @@ func main() {
 	me := r.subRouter("/me")
 	me.use(userGuard)
 	me.get("", userHandler.GetMyProfile)
+	me.post("", userHandler.PatchMyProfile)
 	me.post("/bulk_ro_presets", roPresetHandler.BulkCreatePresets)
 	me.get("/ro_presets", roPresetHandler.GetMyPresets)
 	me.post("/ro_presets", roPresetHandler.CreatePreset)

@@ -1,5 +1,7 @@
 package repository
 
+import "time"
+
 type Status struct {
 	Active   string
 	InActive string
@@ -21,12 +23,13 @@ var UserRole = Role{
 }
 
 type User struct {
-	Id        string `bson:"_id,omitempty"`
-	Name      string `bson:"name"`
-	Email     string `bson:"email"`
-	Status    string `bson:"status"`
-	Role      string `bson:"role"`
-	CreatedAt string `bson:"created_at"`
+	Id        string    `bson:"_id,omitempty"`
+	Name      string    `bson:"name"`
+	Email     string    `bson:"email"`
+	Status    string    `bson:"status"`
+	Role      string    `bson:"role"`
+	CreatedAt time.Time `bson:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at"`
 }
 
 type CreateUserInput struct {
@@ -35,8 +38,15 @@ type CreateUserInput struct {
 	Role  string
 }
 
+type UpdateUserInput struct {
+	Name      string    `bson:"name,omitempty"`
+	Status    string    `bson:"status,omitempty"`
+	UpdatedAt time.Time `bson:"updated_at"`
+}
+
 type UserRepository interface {
 	CreateUser(CreateUserInput) (*User, error)
+	PatchUser(id string, u UpdateUserInput) error
 	FindUserById(string) (*User, error)
 	FindUserByEmail(string) (*User, error)
 }

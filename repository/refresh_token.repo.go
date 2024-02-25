@@ -44,8 +44,8 @@ func (repo refreshTokenRepo) CreateRefreshToken(input CreateRefreshTokenInput) (
 		UserId:    input.UserId,
 		Count:     input.Count,
 		UserAgent: input.UserAgent,
-		CreatedAt: now.Format(time.RFC3339),
-		UpdatedAt: now.Format(time.RFC3339),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 	result, err := repo.collection.InsertOne(context.Background(), newRefreshToken)
 	if err != nil {
@@ -70,7 +70,7 @@ func (repo refreshTokenRepo) UpdateRefreshToken(input UpdateRefreshTokenInput) (
 	err = repo.collection.FindOneAndUpdate(context.Background(), bson.M{"_id": objectId}, bson.M{
 		"$set": PatchRefreshToken{
 			Count:     input.Count,
-			UpdatedAt: time.Now().Format(time.RFC3339),
+			UpdatedAt: time.Now(),
 		},
 	}).Decode(&updatedRefreshToken)
 	if err != nil {

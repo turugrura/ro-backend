@@ -61,7 +61,7 @@ func (repo authenticationDataRepo) CreateAuthenticationData(params CreateAuthent
 	var data = AuthenticationData{
 		AuthReference: params.AuthReference,
 		Email:         params.Email,
-		CreatedAt:     time.Now().Format(time.RFC3339),
+		CreatedAt:     time.Now(),
 	}
 
 	result, err := repo.collection.InsertOne(context.Background(), data)

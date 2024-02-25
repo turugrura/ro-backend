@@ -10,11 +10,22 @@ type userService struct {
 	userRepository repository.UserRepository
 }
 
-func NewUserService(userRepo repository.UserRepository) userService {
+func (s userService) PatchUser(r PatchUserRequest) (*repository.User, error) {
+	err := s.userRepository.PatchUser(r.Id, repository.UpdateUserInput{
+		Name: r.Name,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.userRepository.FindUserById(r.Id)
+}
+
+func NewUserService(userRepo repository.UserRepository) UserService {
 	return userService{userRepository: userRepo}
 }
 
-func (s userService) CreateUser(req CreateUserRequest) (*UserResponse, error) {
+func (s userService) CreateUser(req CreateUserRequest) (*repository.User, error) {
 	existedUser, _ := s.userRepository.FindUserByEmail(req.Email)
 	if existedUser != nil {
 		return nil, fmt.Errorf("email '%v' already registered", req.Email)
@@ -27,49 +38,13 @@ func (s userService) CreateUser(req CreateUserRequest) (*UserResponse, error) {
 		Email: req.Email,
 		Role:  repository.UserRole.User,
 	}
-	newUser, err := s.userRepository.CreateUser(user)
-	if err != nil {
-		return nil, err
-	}
-
-	return &UserResponse{
-		Id:        newUser.Id,
-		Name:      newUser.Name,
-		Email:     newUser.Email,
-		Status:    newUser.Status,
-		Role:      newUser.Role,
-		CreatedAt: newUser.CreatedAt,
-	}, nil
+	return s.userRepository.CreateUser(user)
 }
 
-func (s userService) FindUserById(id string) (*UserResponse, error) {
-	user, err := s.userRepository.FindUserById(id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &UserResponse{
-		Id:        user.Id,
-		Name:      user.Name,
-		Email:     user.Email,
-		Status:    user.Status,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-	}, nil
+func (s userService) FindUserById(id string) (*repository.User, error) {
+	return s.userRepository.FindUserById(id)
 }
 
-func (s userService) FindUserByEmail(email string) (*UserResponse, error) {
-	user, err := s.userRepository.FindUserByEmail(email)
-	if err != nil {
-		return nil, err
-	}
-
-	return &UserResponse{
-		Id:        user.Id,
-		Name:      user.Name,
-		Email:     user.Email,
-		Status:    user.Status,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-	}, nil
+func (s userService) FindUserByEmail(email string) (*repository.User, error) {
+	return s.userRepository.FindUserByEmail(email)
 }

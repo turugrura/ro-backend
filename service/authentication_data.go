@@ -1,9 +1,11 @@
 package service
 
+import "time"
+
 type AuthenticationData struct {
 	AuthReference string
 	Code          string
-	CreatedAt     string
+	CreatedAt     time.Time
 	Email         string
 }
 
