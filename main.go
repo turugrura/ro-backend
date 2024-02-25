@@ -19,6 +19,7 @@ import (
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/google"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/time/rate"
@@ -166,9 +167,32 @@ func connectMongoDB() (err error) {
 
 	mongoDb := client.Database(appConfig.Mongodb.DbName)
 	userCollection = mongoDb.Collection("users")
+	_, err = userCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
+		{
+			Keys: bson.M{
+				"email": 1,
+			},
+			Options: options.Index().SetUnique(true),
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	authDataCollection = mongoDb.Collection("authorization_codes")
 	refreshTokenCollection = mongoDb.Collection("refresh_tokens")
+
 	roPresetCollection = mongoDb.Collection("ro_presets")
+	_, err = roPresetCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
+		{
+			Keys: bson.M{
+				"id": 1,
+			},
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
 
 	return
 }
