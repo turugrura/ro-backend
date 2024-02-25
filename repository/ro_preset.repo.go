@@ -92,7 +92,7 @@ func (r roPresetRepo) PartialSearchPresets(i PartialSearchRoPresetInput) (*Parti
 
 // DeletePresetById implements RoPresetRepository.
 func (r roPresetRepo) DeletePresetById(id string) (*int, error) {
-	res, err := r.collection.DeleteOne(context.Background(), PartialSearchRoPresetInput{Id: &id})
+	res, err := r.collection.DeleteOne(context.Background(), IdSearchInput{Id: id})
 	if err != nil {
 		return nil, err
 	}
@@ -168,8 +168,26 @@ func (r roPresetRepo) UpdatePreset(i UpdatePresetInput) error {
 		i.ClassId = i.Model.Class
 	}
 
-	_, err := r.collection.UpdateOne(context.Background(), PartialSearchRoPresetInput{Id: &i.Id}, bson.M{
+	_, err := r.collection.UpdateOne(context.Background(), IdSearchInput{Id: i.Id}, bson.M{
 		"$set": i,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r roPresetRepo) UpdatePresetTags(i UpdateTagsInput) error {
+	_, err := r.collection.UpdateOne(context.Background(), IdSearchInput{Id: i.Id}, bson.M{
+		"$addToSet": bson.M{
+			"tags": bson.M{
+				"$each": i.Tags,
+			},
+		},
+		"$set": UpdateTagsInput{
+			UpdatedAt: time.Now(),
+		},
 	})
 	if err != nil {
 		return err
@@ -187,7 +205,7 @@ func (r roPresetRepo) FindPresetById(i FindPresetByIdInput) (*RoPreset, error) {
 	}
 
 	var data RoPreset
-	err := r.collection.FindOne(context.Background(), PartialSearchRoPresetInput{Id: &i.Id}, &opt).Decode(&data)
+	err := r.collection.FindOne(context.Background(), IdSearchInput{Id: i.Id}, &opt).Decode(&data)
 	if err != nil {
 		return nil, err
 	}

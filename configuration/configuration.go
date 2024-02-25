@@ -23,9 +23,10 @@ type AuthConfig struct {
 }
 
 type JwtConfig struct {
-	Secret                     string
-	AccessTokenPeriodInMinutes int
-	RefreshTokenPeriodInDays   int
+	Secret                         string
+	AccessTokenPeriodInMinutes     int
+	RefreshTokenPeriodInDays       int
+	RefreshTokenNotBeforeInMinutes int
 }
 
 type RoConfig struct {
@@ -72,9 +73,10 @@ func getAppConfig() AppConfig {
 				CallbackUrl:  viper.GetString("authProvider.google.callbackUrl"),
 			},
 			Jwt: JwtConfig{
-				Secret:                     viper.GetString("jwt.secret"),
-				AccessTokenPeriodInMinutes: viper.GetInt("jwt.accessTokenPeriodInMinutes"),
-				RefreshTokenPeriodInDays:   viper.GetInt("jwt.refreshTokenPeriodInDays"),
+				Secret:                         viper.GetString("jwt.secret"),
+				AccessTokenPeriodInMinutes:     viper.GetInt("jwt.accessTokenPeriodInMinutes"),
+				RefreshTokenPeriodInDays:       viper.GetInt("jwt.refreshTokenPeriodInDays"),
+				RefreshTokenNotBeforeInMinutes: viper.GetInt("jwt.RefreshTokenNotBeforeInMinutes"),
 			},
 			Ro: RoConfig{
 				PresetLimit: viper.GetInt("ro.preset.limitPerUser"),

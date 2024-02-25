@@ -87,6 +87,7 @@ func main() {
 	me.post("/ro_presets/{presetId}", roPresetHandler.UpdateMyPreset)
 	me.delete("/ro_presets/{presetId}", roPresetHandler.DeleteById)
 	me.post("/ro_presets/{presetId}/tags", roPresetHandler.AddTags)
+	me.delete("/ro_presets/{presetId}/tags", roPresetHandler.RemoveTags)
 
 	ro := r.subRouter("/ro_presets")
 	ro.use(userGuard)

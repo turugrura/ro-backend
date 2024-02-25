@@ -107,6 +107,7 @@ func (s tokenService) signAccessToken(userId string) (*string, error) {
 
 func (s tokenService) signRefreshToken(tokenId, userId string, count uint32) (*string, error) {
 	var tokenPeriodInDays = time.Duration(configuration.Config.Jwt.RefreshTokenPeriodInDays)
+	var rfNBF = time.Duration(configuration.Config.Jwt.RefreshTokenNotBeforeInMinutes)
 
 	now := time.Now()
 	claims := jwt.StandardClaims{
@@ -114,7 +115,7 @@ func (s tokenService) signRefreshToken(tokenId, userId string, count uint32) (*s
 		Subject:   fmt.Sprint(count),
 		Issuer:    userId,
 		IssuedAt:  now.Unix(),
-		NotBefore: now.Add(time.Minute * 1).Unix(),
+		NotBefore: now.Add(time.Minute * rfNBF).Unix(),
 		ExpiresAt: now.Add(time.Hour * 24 * tokenPeriodInDays).Unix(),
 	}
 

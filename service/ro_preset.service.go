@@ -3,6 +3,8 @@ package service
 import (
 	"fmt"
 	"ro-backend/repository"
+
+	"golang.org/x/exp/slices"
 )
 
 func NewRoPresetService(repo repository.RoPresetRepository) RoPresetService {
@@ -35,9 +37,47 @@ func (s roPresetService) AddTags(r AddTagsRequest) (*repository.RoPreset, error)
 		return nil, err
 	}
 
-	err = s.repo.UpdatePreset(repository.UpdatePresetInput{
+	// tags := []string{}
+	// for _, v := range preset.Tags {
+	// 	_, wantAdd := slices.BinarySearch(r.Tags, v)
+	// 	if wantAdd {
+	// 		continue
+	// 	}
+	// 	tags = append(tags, v)
+	// }
+
+	err = s.repo.UpdatePresetTags(repository.UpdateTagsInput{
 		Id:   preset.Id,
 		Tags: r.Tags,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.FindPresetById(repository.FindPresetByIdInput{
+		Id:           r.Id,
+		InCludeModel: false,
+	})
+}
+
+func (s roPresetService) RemoveTags(r AddTagsRequest) (*repository.RoPreset, error) {
+	preset, err := s.ValidatePresetOwner(CheckPresetOwnerRequest{Id: r.Id, UserId: r.UserId})
+	if err != nil {
+		return nil, err
+	}
+
+	tags := []string{}
+	for _, v := range preset.Tags {
+		wantDelete := slices.Contains(r.Tags, v)
+		if wantDelete {
+			continue
+		}
+		tags = append(tags, v)
+	}
+
+	err = s.repo.UpdatePreset(repository.UpdatePresetInput{
+		Id:   preset.Id,
+		Tags: tags,
 	})
 	if err != nil {
 		return nil, err

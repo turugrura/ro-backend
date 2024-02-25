@@ -88,6 +88,12 @@ type UpdatePresetInput struct {
 	UpdatedAt time.Time    `bson:"updated_at" json:"updatedAt"`
 }
 
+type UpdateTagsInput struct {
+	Id        string    `bson:"id,omitempty"`
+	Tags      []string  `bson:"tags,omitempty"`
+	UpdatedAt time.Time `bson:"updated_at,omitempty"`
+}
+
 type BulkCreatePresetInput struct {
 	UserId   string `bson:"user_id" json:"userId"`
 	BulkData []struct {
@@ -107,6 +113,10 @@ type PartialSearchRoPresetInput struct {
 	InCludeModel bool
 }
 
+type IdSearchInput struct {
+	Id string `bson:"id"`
+}
+
 type PartialSearchRoPresetResult struct {
 	Items []RoPreset
 	Total int64
@@ -124,5 +134,6 @@ type RoPresetRepository interface {
 	CreatePreset(CreatePresetInput) (*RoPreset, error)
 	CreatePresets(BulkCreatePresetInput) (*[]RoPreset, error)
 	UpdatePreset(UpdatePresetInput) error
+	UpdatePresetTags(UpdateTagsInput) error
 	DeletePresetById(string) (*int, error)
 }

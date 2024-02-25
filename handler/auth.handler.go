@@ -51,40 +51,43 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var p LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		fmt.Println(err)
+		WriteErr(w, err.Error())
 		return
 	}
 
-	authorizationCode := p.AuthorizationCode
-	fmt.Println("authorizationCode", authorizationCode)
-
-	if authorizationCode == "" {
+	if p.AuthorizationCode == "" {
 		return
 	}
 
-	authData, err := h.authenticationDataService.FindAuthenticationDataByCode(authorizationCode)
+	authData, err := h.authenticationDataService.FindAuthenticationDataByCode(p.AuthorizationCode)
 	if err != nil {
-		fmt.Println(err)
+		WriteErr(w, err.Error())
 		return
 	}
 
 	user, err := h.userService.FindUserByEmail(authData.Email)
 	if err != nil && err != mongo.ErrNoDocuments {
-		fmt.Println(err)
+		WriteErr(w, err.Error())
 		return
 	}
 
 	if user == nil {
-		fmt.Println("User not found")
+		WriteErr(w, ErrUserNotFound)
 		return
 	}
 
 	generatedToken, err := h.tokenService.GenerateAccessToken(service.AccessTokenRequest{
 		UserId:    user.Id,
-		UserAgent: r.Header.Get("user-agent"),
+		UserAgent: r.UserAgent(),
 	})
 	if err != nil {
-		fmt.Print(err)
+		WriteErr(w, err.Error())
+		return
+	}
+
+	err = h.authenticationDataService.DeleteAuthenticationData(p.AuthorizationCode)
+	if err != nil {
+		WriteErr(w, err.Error())
 		return
 	}
 
@@ -92,20 +95,13 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		AccessToken:  generatedToken.AccessToken,
 		RefreshToken: generatedToken.RefreshToken,
 	}
-
-	err = h.authenticationDataService.DeleteAuthenticationData(authorizationCode)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(loginResponse)
+	WriteOK(w, loginResponse)
 }
 
 func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := gothic.CompleteUserAuth(w, r)
 	if err != nil {
-		fmt.Fprintln(w, err)
+		WriteErr(w, err.Error())
 		return
 	}
 
@@ -119,12 +115,12 @@ func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Reque
 	// fmt.Println(user)
 
 	if userInfo.RawData["verified_email"] == false {
-		fmt.Print("Email is unverified")
+		WriteErr(w, ErrUnverifiedEmail)
 		return
 	}
 
 	if userInfo.Email == "" {
-		fmt.Println("Email is empty")
+		WriteErr(w, ErrEmptyEmail)
 		return
 	}
 
@@ -136,11 +132,11 @@ func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Reque
 		})
 
 		if err != nil {
-			fmt.Println(err)
+			WriteErr(w, err.Error())
 			return
 		}
 	} else if err != nil {
-		fmt.Println(err)
+		WriteErr(w, err.Error())
 		return
 	}
 
@@ -149,7 +145,7 @@ func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Reque
 		Email:         user.Email,
 	})
 	if err != nil {
-		fmt.Println(err)
+		WriteErr(w, err.Error())
 		return
 	}
 
@@ -162,19 +158,19 @@ func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	var p RefreshTokenRequest
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("cannot read body, %v\n", err), http.StatusBadRequest)
+		WriteErr(w, err.Error())
 		return
 	}
 
 	claims, err := h.tokenService.DecodeToken(p.RefreshToken)
 	if err != nil {
-		fmt.Printf("cannot decode token, %v\n", err)
+		WriteErr(w, err.Error())
 		return
 	}
 
 	count, err := strconv.ParseUint(claims.Subject, 10, 32)
 	if err != nil {
-		fmt.Printf("cannot ParseUint, %v\n", err)
+		WriteErr(w, err.Error())
 		return
 	}
 
@@ -185,7 +181,7 @@ func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		Count:     uint32(count),
 	})
 	if err != nil {
-		fmt.Printf("cannot refresh token, %v\n", err)
+		WriteErr(w, err.Error())
 		return
 	}
 
@@ -194,5 +190,5 @@ func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: newToken.RefreshToken,
 	}
 
-	json.NewEncoder(w).Encode(loginResponse)
+	WriteOK(w, loginResponse)
 }

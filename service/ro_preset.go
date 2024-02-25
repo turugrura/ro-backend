@@ -26,6 +26,7 @@ type RoPresetService interface {
 	CreatePreset(repository.CreatePresetInput) (*repository.RoPreset, error)
 	BulkCreatePresets(repository.BulkCreatePresetInput) (*[]repository.RoPreset, error)
 	AddTags(AddTagsRequest) (*repository.RoPreset, error)
+	RemoveTags(AddTagsRequest) (*repository.RoPreset, error)
 	UpdatePreset(repository.UpdatePresetInput) (*repository.RoPreset, error)
 	DeletePresetById(CheckPresetOwnerRequest) (*int, error)
 }

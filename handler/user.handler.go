@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"ro-backend/service"
 )
@@ -33,7 +31,7 @@ func (h userHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.FindUserById(userId)
 	if err != nil {
-		fmt.Println("cannot find user")
+		WriteErr(w, ErrUnAuthentication)
 		return
 	}
 
@@ -46,5 +44,5 @@ func (h userHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: user.CreatedAt,
 	}
 
-	json.NewEncoder(w).Encode(response)
+	WriteOK(w, response)
 }
