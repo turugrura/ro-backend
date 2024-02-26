@@ -67,7 +67,6 @@ type RoPreset struct {
 	Label     string      `bson:"label" json:"label"`
 	Model     PresetModel `bson:"model" json:"model"`
 	ClassId   int         `bson:"class_id" json:"classId"`
-	Tags      []string    `bson:"tags" json:"tags"`
 	CreatedAt time.Time   `bson:"created_at" json:"createdAt"`
 	UpdatedAt time.Time   `bson:"updated_at" json:"updatedAt"`
 }
@@ -84,13 +83,11 @@ type UpdatePresetInput struct {
 	UserId    string       `bson:"user_id,omitempty" json:"userId"`
 	Label     string       `bson:"label,omitempty" json:"label"`
 	Model     *PresetModel `bson:"model,omitempty" json:"model"`
-	Tags      []string     `bson:"tags,omitempty" json:"tags"`
 	UpdatedAt time.Time    `bson:"updated_at" json:"updatedAt"`
 }
 
 type UpdateTagsInput struct {
 	Id        string    `bson:"id,omitempty"`
-	Tags      []string  `bson:"tags,omitempty"`
 	UpdatedAt time.Time `bson:"updated_at,omitempty"`
 }
 
@@ -107,7 +104,6 @@ type PartialSearchRoPresetInput struct {
 	UserId       *string `bson:"user_id,omitempty"`
 	ClassId      *int    `bson:"class_id,omitempty"`
 	Label        *string `bson:"label,omitempty"`
-	Tag          *string `bson:"tag,omitempty"`
 	Skip         *int
 	Take         *int
 	InCludeModel bool
@@ -129,11 +125,11 @@ type FindPresetByIdInput struct {
 
 type RoPresetRepository interface {
 	FindPresetById(FindPresetByIdInput) (*RoPreset, error)
-	FindPresetByIds([]string) (*[]RoPreset, error)
+	FindPresetByIds([]string) ([]RoPreset, error)
 	PartialSearchPresets(PartialSearchRoPresetInput) (*PartialSearchRoPresetResult, error)
 	CreatePreset(CreatePresetInput) (*RoPreset, error)
-	CreatePresets(BulkCreatePresetInput) (*[]RoPreset, error)
+	CreatePresets(BulkCreatePresetInput) ([]RoPreset, error)
 	UpdatePreset(UpdatePresetInput) error
-	UpdatePresetTags(UpdateTagsInput) error
+	// UpdatePresetTags(UpdateTagsInput) error
 	DeletePresetById(string) (*int, error)
 }

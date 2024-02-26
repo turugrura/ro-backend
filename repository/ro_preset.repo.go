@@ -18,14 +18,23 @@ type roPresetRepo struct {
 	collection *mongo.Collection
 }
 
-func (r roPresetRepo) FindPresetByIds(ids []string) (*[]RoPreset, error) {
-	r.collection.Find(context.Background(), bson.M{
+func (r roPresetRepo) FindPresetByIds(ids []string) ([]RoPreset, error) {
+	cs, err := r.collection.Find(context.Background(), bson.M{
 		"id": bson.M{
 			"$in": ids,
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	presets := []RoPreset{}
+	err = cs.All(context.Background(), &presets)
+	if err != nil {
+		return nil, err
+	}
+
+	return presets, nil
 }
 
 func (r roPresetRepo) PartialSearchPresets(i PartialSearchRoPresetInput) (*PartialSearchRoPresetResult, error) {
@@ -35,11 +44,6 @@ func (r roPresetRepo) PartialSearchPresets(i PartialSearchRoPresetInput) (*Parti
 	}
 	if i.Id != nil {
 		filter["id"] = *i.Id
-	}
-	if i.Tag != nil {
-		filter["tags"] = bson.M{
-			"$in": []string{*i.Tag},
-		}
 	}
 	if i.UserId != nil {
 		filter["user_id"] = *i.UserId
@@ -122,7 +126,7 @@ func (r roPresetRepo) CreatePreset(i CreatePresetInput) (*RoPreset, error) {
 	}, nil
 }
 
-func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) (*[]RoPreset, error) {
+func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) ([]RoPreset, error) {
 	var models []mongo.WriteModel
 	for i := 0; i < len(ip.BulkData); i++ {
 		var cur = ip.BulkData[i]
@@ -152,7 +156,7 @@ func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) (*[]RoPreset, erro
 		})
 	}
 
-	return &presets, nil
+	return presets, nil
 }
 
 func (r roPresetRepo) UpdatePreset(i UpdatePresetInput) error {
@@ -172,23 +176,23 @@ func (r roPresetRepo) UpdatePreset(i UpdatePresetInput) error {
 	return nil
 }
 
-func (r roPresetRepo) UpdatePresetTags(i UpdateTagsInput) error {
-	_, err := r.collection.UpdateOne(context.Background(), IdSearchInput{Id: i.Id}, bson.M{
-		"$addToSet": bson.M{
-			"tags": bson.M{
-				"$each": i.Tags,
-			},
-		},
-		"$set": UpdateTagsInput{
-			UpdatedAt: time.Now(),
-		},
-	})
-	if err != nil {
-		return err
-	}
+// func (r roPresetRepo) UpdatePresetTags(i UpdateTagsInput) error {
+// 	_, err := r.collection.UpdateOne(context.Background(), IdSearchInput{Id: i.Id}, bson.M{
+// 		"$addToSet": bson.M{
+// 			"tags": bson.M{
+// 				"$each": i.Tags,
+// 			},
+// 		},
+// 		"$set": UpdateTagsInput{
+// 			UpdatedAt: time.Now(),
+// 		},
+// 	})
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (r roPresetRepo) FindPresetById(i FindPresetByIdInput) (*RoPreset, error) {
 	var opt = options.FindOneOptions{}

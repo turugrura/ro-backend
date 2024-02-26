@@ -36,7 +36,6 @@ func WriteErr(w http.ResponseWriter, msg string) {
 		message = http.StatusText(httpStatus)
 	case primitive.ErrInvalidHex.Error():
 		httpStatus = http.StatusBadRequest
-		message = http.StatusText(httpStatus)
 	case ErrForbidden:
 		httpStatus = http.StatusForbidden
 		message = http.StatusText(httpStatus)

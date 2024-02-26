@@ -1,0 +1,72 @@
+package repository
+
+import "time"
+
+type PresetTag struct {
+	Id          string    `bson:"_id,omitempty"`
+	PublisherId string    `bson:"publisher_id"`
+	Tag         string    `bson:"tag"`
+	ClassId     int       `bson:"class_id"`
+	PresetId    string    `bson:"preset_id"`
+	Likes       []string  `bson:"likes"`
+	TotalLike   int       `bson:"total_like"`
+	CreatedAt   time.Time `bson:"created_at"`
+	UpdatedAt   time.Time `bson:"updated_at"`
+}
+
+type PresetTag2 struct {
+	Id          string        `bson:"_id,omitempty"`
+	PublisherId string        `bson:"publisher_id"`
+	Tag         string        `bson:"tag"`
+	ClassId     int           `bson:"class_id"`
+	PresetId    string        `bson:"preset_id"`
+	Likes       []interface{} `bson:"likes"`
+	TotalLike   int           `bson:"total_like"`
+	CreatedAt   time.Time     `bson:"created_at"`
+	UpdatedAt   time.Time     `bson:"updated_at"`
+}
+
+type CreateTagInput struct {
+	PublisherId string
+	Tags        []string
+	ClassId     int
+	PresetId    string
+}
+
+type PartialUpdateTagInput struct {
+	TotalLike int       `bson:"total_like"`
+	UpdatedAt time.Time `bson:"updated_at"`
+}
+
+type LikeTagInput struct {
+	Id        string
+	UserId    string
+	TotalLike int
+}
+
+type PartialSearchTagsInput struct {
+	PublisherId string `bson:"publisher_id,omitempty"`
+	Tag         string `bson:"tag,omitempty"`
+	ClassId     int    `bson:"class_id,omitempty"`
+	PresetId    string `bson:"preset_id,omitempty"`
+}
+
+type PartialSearchSorting struct {
+	TotalLike int       `bson:"total_like"`
+	CreatedAt time.Time `bson:"created_at"`
+}
+
+type PartialSearchTagsResult struct {
+	Items []PresetTag
+	Total int
+}
+
+type PresetTagRepository interface {
+	FindTagById(string) (*PresetTag, error)
+	CreateTags(CreateTagInput) ([]string, error)
+	DeleteTag(id string) error
+	LikeTag(LikeTagInput) error
+	UnLikeTag(LikeTagInput) error
+	PartialSearchTags(i PartialSearchTagsInput, skip, limit int) (*PartialSearchTagsResult, error)
+	FindByPresetIds([]string) ([]PresetTag, error)
+}
