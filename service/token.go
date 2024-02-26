@@ -1,6 +1,10 @@
 package service
 
-import "github.com/golang-jwt/jwt"
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt"
+)
 
 type AccessTokenResponse struct {
 	AccessToken  string
@@ -10,18 +14,19 @@ type AccessTokenResponse struct {
 type AccessTokenRequest struct {
 	UserAgent string
 	UserId    string
+	Name      string
+	CreatedAt time.Time
+	Role      string
 }
 
 type GenerateRefreshTokenRequest struct {
-	UserAgent string
-	UserId    string
+	AccessTokenRequest
 }
 
 type RefreshTokenRequest struct {
-	Id        string
-	UserAgent string
-	UserId    string
-	Count     uint32
+	AccessTokenRequest
+	Id    string
+	Count uint32
 }
 
 type TokenService interface {

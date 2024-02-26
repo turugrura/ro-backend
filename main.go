@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"log"
@@ -14,6 +13,7 @@ import (
 	"ro-backend/repository"
 	"ro-backend/service"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth"
@@ -72,7 +72,6 @@ func main() {
 
 	r := newAppRouter(mux.NewRouter())
 	r.use(jsonResponseMiddleware)
-	r.use(setSecurityHeadersMiddleware)
 	r.use(rateLimitMiddleware)
 
 	r.get("/auth/{provider}/callback", authHandler.AuthenticationCallback)
@@ -86,6 +85,7 @@ func main() {
 	me.use(userGuard)
 	me.get("", userHandler.GetMyProfile)
 	me.post("", userHandler.PatchMyProfile)
+	me.post("/logout", authHandler.Logout)
 	me.post("/bulk_ro_presets", roPresetHandler.BulkCreatePresets)
 	me.get("/ro_presets", roPresetHandler.GetMyPresets)
 	me.post("/ro_presets", roPresetHandler.CreatePreset)
@@ -110,9 +110,15 @@ func main() {
 	tag.post("/{tagId}/like", roPresetHandler.LikeTag)
 	tag.delete("/{tagId}/like", roPresetHandler.UnLikeTag)
 
+	headersOk := handlers.AllowedHeaders([]string{"authorization", "Content-Type"})
+	origins := handlers.AllowedOrigins(appConfig.Security.AllowedOrigins)
+	methods := handlers.AllowedMethods([]string{http.MethodGet, http.MethodOptions, http.MethodPost, http.MethodDelete})
+	maxAge := handlers.MaxAge(86400)
+	h := handlers.CORS(headersOk, origins, methods, maxAge)(r.router)
+
 	appPort := appConfig.Port
 	log.Printf("listening on localhost:%v\n", appPort)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", appPort), r.router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", appPort), h))
 }
 
 func initSessionStore() {
@@ -149,15 +155,6 @@ func initTimeZone() {
 func jsonResponseMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
-	})
-}
-
-func setSecurityHeadersMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Access-Control-Max-Age", "86400")
-		w.Header().Add("Access-Control-Allow-Origin", appConfig.Security.AllowedOrigin)
-		w.Header().Add("Access-Control-Allow-Methods", strings.Join([]string{http.MethodGet, http.MethodPost, http.MethodDelete}, ","))
 		next.ServeHTTP(w, r)
 	})
 }

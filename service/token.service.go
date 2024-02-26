@@ -18,12 +18,12 @@ func NewTokenService(repo repository.RefreshTokenRepository) TokenService {
 }
 
 func (s tokenService) GenerateAccessToken(req AccessTokenRequest) (*AccessTokenResponse, error) {
-	signedAccessToken, err := s.signAccessToken(req.UserId)
+	signedAccessToken, err := s.signAccessToken(req)
 	if err != nil {
 		return nil, err
 	}
 
-	signedRefreshToken, err := s.GenerateRefreshToken(GenerateRefreshTokenRequest(req))
+	signedRefreshToken, err := s.GenerateRefreshToken(GenerateRefreshTokenRequest{AccessTokenRequest: req})
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (s tokenService) RefreshToken(req RefreshTokenRequest) (*AccessTokenRespons
 		return nil, fmt.Errorf("token is mismatch")
 	}
 
-	signedAccessToken, err := s.signAccessToken(req.UserId)
+	signedAccessToken, err := s.signAccessToken(req.AccessTokenRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -92,12 +92,18 @@ func (s tokenService) RevokeTokenByUserId(userId string) error {
 	return s.repo.DeleteRefreshTokenByUserId(userId)
 }
 
-func (s tokenService) signAccessToken(userId string) (*string, error) {
+type AppClaims struct {
+	jwt.StandardClaims
+	Role string
+}
+
+func (s tokenService) signAccessToken(r AccessTokenRequest) (*string, error) {
 	var tokenPeriod = time.Duration(configuration.Config.Jwt.AccessTokenPeriodInMinutes)
 
 	now := time.Now()
 	claims := jwt.StandardClaims{
-		Issuer:    userId,
+		Id:        r.UserId,
+		Issuer:    r.Name,
 		IssuedAt:  now.Unix(),
 		ExpiresAt: now.Add(time.Minute * tokenPeriod).Unix(),
 	}

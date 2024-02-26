@@ -29,7 +29,7 @@ func userGuard(next http.Handler) http.Handler {
 			return
 		}
 
-		r.Header.Add("userId", claims.Issuer)
+		r.Header.Add("userId", claims.Id)
 
 		// Pass down the request to the next middleware (or final handler)
 		next.ServeHTTP(w, r)

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"ro-backend/appError"
 	"ro-backend/configuration"
+	"ro-backend/repository"
 	"ro-backend/service"
 	"strconv"
 	"strings"
@@ -24,6 +25,7 @@ type authHandler struct {
 
 type AuthHandler interface {
 	Login(http.ResponseWriter, *http.Request)
+	Logout(http.ResponseWriter, *http.Request)
 	RefreshToken(http.ResponseWriter, *http.Request)
 	AuthenticationCallback(http.ResponseWriter, *http.Request)
 }
@@ -64,6 +66,10 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authData, err := h.authenticationDataService.FindAuthenticationDataByCode(p.AuthorizationCode)
+	if err == mongo.ErrNoDocuments {
+		WriteErr(w, appError.ErrUnAuthentication)
+		return
+	}
 	if err != nil {
 		WriteErr(w, err.Error())
 		return
@@ -83,6 +89,9 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	generatedToken, err := h.tokenService.GenerateAccessToken(service.AccessTokenRequest{
 		UserId:    user.Id,
 		UserAgent: r.UserAgent(),
+		Name:      user.Name,
+		CreatedAt: user.CreatedAt,
+		Role:      user.Role,
 	})
 	if err != nil {
 		WriteErr(w, err.Error())
@@ -100,6 +109,18 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: generatedToken.RefreshToken,
 	}
 	WriteOK(w, loginResponse)
+}
+
+func (h authHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	userId := r.Header.Get("userId")
+
+	err := h.tokenService.RevokeTokenByUserId(userId)
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+
+	WriteOK(w, nil)
 }
 
 func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Request) {
@@ -185,11 +206,26 @@ func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, err := h.userService.FindUserById(claims.Issuer)
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+	if user.Status != repository.UserStatus.Active {
+		WriteErr(w, appError.ErrUserInactive)
+		return
+	}
+
 	newToken, err := h.tokenService.RefreshToken(service.RefreshTokenRequest{
-		Id:        claims.Id,
-		UserAgent: r.UserAgent(),
-		UserId:    claims.Issuer,
-		Count:     uint32(count),
+		Id:    claims.Id,
+		Count: uint32(count),
+		AccessTokenRequest: service.AccessTokenRequest{
+			UserAgent: r.UserAgent(),
+			UserId:    user.Id,
+			Name:      user.Name,
+			CreatedAt: user.CreatedAt,
+			Role:      user.Role,
+		},
 	})
 	if err != nil {
 		WriteErr(w, err.Error())

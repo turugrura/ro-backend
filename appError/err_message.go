@@ -10,4 +10,5 @@ const (
 	ErrNotMyPreset                 = "not my preset"
 	ErrCannotUpdatePublishedPreset = "cannot update published preset"
 	ErrCannotTagUnpublished        = "cannot tag unpublished preset"
+	ErrUserInactive                = "user is inactive"
 )

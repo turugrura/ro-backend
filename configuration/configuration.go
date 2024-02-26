@@ -34,7 +34,7 @@ type RoConfig struct {
 }
 
 type SecurityConfig struct {
-	AllowedOrigin string
+	AllowedOrigins []string
 }
 
 type AppConfig struct {
@@ -57,7 +57,7 @@ func getAppConfig() AppConfig {
 			Port:        viper.GetInt("app.port"),
 			Environment: viper.GetString("app.env"),
 			Security: SecurityConfig{
-				AllowedOrigin: viper.GetString("security.allowOrigin"),
+				AllowedOrigins: viper.GetStringSlice("security.allowOrigins"),
 			},
 			Mongodb: MongoDbConfig{
 				ConnectionStr: viper.GetString("mongodb.connectionString"),
