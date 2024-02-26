@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"ro-backend/appError"
 	"ro-backend/configuration"
 	"ro-backend/service"
 	"strconv"
@@ -75,7 +76,7 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if user == nil {
-		WriteErr(w, ErrUserNotFound)
+		WriteErr(w, appError.ErrUserNotFound)
 		return
 	}
 
@@ -118,12 +119,12 @@ func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Reque
 	// fmt.Println(user)
 
 	if userInfo.RawData["verified_email"] == false {
-		WriteErr(w, ErrUnverifiedEmail)
+		WriteErr(w, appError.ErrUnverifiedEmail)
 		return
 	}
 
 	if userInfo.Email == "" {
-		WriteErr(w, ErrEmptyEmail)
+		WriteErr(w, appError.ErrEmptyEmail)
 		return
 	}
 

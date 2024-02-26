@@ -55,7 +55,7 @@ func main() {
 	var userService = service.NewUserService(userRepo)
 	var tokenService = service.NewTokenService(refreshTokenRepo)
 	var authDataService = service.NewAuthenticationDataService(authDataRepo)
-	var roPresetService = service.NewRoPresetService(roPresetRepo)
+	var roPresetService = service.NewRoPresetService(roPresetRepo, roTagRepo)
 	var roTagService = service.NewPresetTagService(roTagRepo, roPresetRepo)
 
 	var authHandler = handler.NewAuthHandler(handler.AuthHandlerParam{
@@ -93,6 +93,8 @@ func main() {
 	me.get("/ro_presets/{presetId}", roPresetHandler.GetMyPresetById)
 	me.post("/ro_presets/{presetId}", roPresetHandler.UpdateMyPreset)
 	me.delete("/ro_presets/{presetId}", roPresetHandler.DeleteById)
+	me.post("/ro_presets/{presetId}/publish", roPresetHandler.PublishMyPreset)
+	me.delete("/ro_presets/{presetId}/publish", roPresetHandler.UnPublishMyPreset)
 
 	me.post("/ro_presets/{presetId}/tags", roPresetHandler.AddTags)
 	me.delete("/ro_presets/{presetId}/tags/{tagId}", roPresetHandler.RemoveTags)

@@ -61,14 +61,17 @@ type PresetModel struct {
 }
 
 type RoPreset struct {
-	Id        string      `bson:"id" json:"id"`
-	UserId    string      `bson:"user_id" json:"userId"`
-	Name      string      `bson:"name" json:"name"`
-	Label     string      `bson:"label" json:"label"`
-	Model     PresetModel `bson:"model" json:"model"`
-	ClassId   int         `bson:"class_id" json:"classId"`
-	CreatedAt time.Time   `bson:"created_at" json:"createdAt"`
-	UpdatedAt time.Time   `bson:"updated_at" json:"updatedAt"`
+	Id          string      `bson:"id" json:"id"`
+	UserId      string      `bson:"user_id" json:"userId"`
+	Name        string      `bson:"name" json:"name"`
+	Label       string      `bson:"label" json:"label"`
+	Model       PresetModel `bson:"model" json:"model"`
+	ClassId     int         `bson:"class_id" json:"classId"`
+	CreatedAt   time.Time   `bson:"created_at" json:"createdAt"`
+	UpdatedAt   time.Time   `bson:"updated_at" json:"updatedAt"`
+	PublishName string      `bson:"publish_name" json:"publishName"`
+	IsPublished bool        `bson:"is_published" json:"isPublished"`
+	PublishedAt time.Time   `bson:"published_at" json:"publishedAt"`
 }
 
 type CreatePresetInput struct {
@@ -78,12 +81,19 @@ type CreatePresetInput struct {
 }
 
 type UpdatePresetInput struct {
-	Id        string       `bson:"id,omitempty" json:"id"`
-	ClassId   int          `bson:"class_id,omitempty" json:"classId"`
-	UserId    string       `bson:"user_id,omitempty" json:"userId"`
-	Label     string       `bson:"label,omitempty" json:"label"`
-	Model     *PresetModel `bson:"model,omitempty" json:"model"`
-	UpdatedAt time.Time    `bson:"updated_at" json:"updatedAt"`
+	ClassId     int          `bson:"class_id,omitempty" json:"classId"`
+	UserId      string       `bson:"user_id,omitempty" json:"userId"`
+	Label       string       `bson:"label,omitempty" json:"label"`
+	Model       *PresetModel `bson:"model,omitempty" json:"model"`
+	UpdatedAt   time.Time    `bson:"updated_at,omitempty" json:"updatedAt"`
+	PublishName string       `bson:"publish_name,omitempty" json:"publishName"`
+	IsPublished bool         `bson:"is_published,omitempty" json:"isPublished"`
+	PublishedAt time.Time    `bson:"published_at,omitempty" json:"publishedAt"`
+}
+
+type UnPublishPresetInput struct {
+	IsPublished bool      `bson:"is_published"`
+	PublishedAt time.Time `bson:"published_at"`
 }
 
 type UpdateTagsInput struct {
@@ -129,7 +139,7 @@ type RoPresetRepository interface {
 	PartialSearchPresets(PartialSearchRoPresetInput) (*PartialSearchRoPresetResult, error)
 	CreatePreset(CreatePresetInput) (*RoPreset, error)
 	CreatePresets(BulkCreatePresetInput) ([]RoPreset, error)
-	UpdatePreset(UpdatePresetInput) error
-	// UpdatePresetTags(UpdateTagsInput) error
+	UpdatePreset(id string, i UpdatePresetInput) error
+	UnpublishedPreset(id string) error
 	DeletePresetById(string) (*int, error)
 }

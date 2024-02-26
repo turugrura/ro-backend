@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"ro-backend/appError"
 	"ro-backend/service"
 	"time"
 )
@@ -39,7 +40,7 @@ func (h userHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.FindUserById(userId)
 	if err != nil {
-		WriteErr(w, ErrUnAuthentication)
+		WriteErr(w, appError.ErrUnAuthentication)
 		return
 	}
 

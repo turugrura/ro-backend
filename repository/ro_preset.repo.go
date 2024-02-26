@@ -18,6 +18,16 @@ type roPresetRepo struct {
 	collection *mongo.Collection
 }
 
+func (r roPresetRepo) UnpublishedPreset(id string) error {
+	_, err := r.collection.UpdateOne(context.Background(), IdSearchInput{Id: id}, bson.M{
+		"$set": UnPublishPresetInput{
+			IsPublished: false,
+		},
+	})
+
+	return err
+}
+
 func (r roPresetRepo) FindPresetByIds(ids []string) ([]RoPreset, error) {
 	cs, err := r.collection.Find(context.Background(), bson.M{
 		"id": bson.M{
@@ -159,14 +169,14 @@ func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) ([]RoPreset, error
 	return presets, nil
 }
 
-func (r roPresetRepo) UpdatePreset(i UpdatePresetInput) error {
+func (r roPresetRepo) UpdatePreset(id string, i UpdatePresetInput) error {
 	i.UpdatedAt = time.Now()
 
 	if i.Model != nil {
 		i.ClassId = i.Model.Class
 	}
 
-	_, err := r.collection.UpdateOne(context.Background(), IdSearchInput{Id: i.Id}, bson.M{
+	_, err := r.collection.UpdateOne(context.Background(), IdSearchInput{Id: id}, bson.M{
 		"$set": i,
 	})
 	if err != nil {
@@ -175,24 +185,6 @@ func (r roPresetRepo) UpdatePreset(i UpdatePresetInput) error {
 
 	return nil
 }
-
-// func (r roPresetRepo) UpdatePresetTags(i UpdateTagsInput) error {
-// 	_, err := r.collection.UpdateOne(context.Background(), IdSearchInput{Id: i.Id}, bson.M{
-// 		"$addToSet": bson.M{
-// 			"tags": bson.M{
-// 				"$each": i.Tags,
-// 			},
-// 		},
-// 		"$set": UpdateTagsInput{
-// 			UpdatedAt: time.Now(),
-// 		},
-// 	})
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
 
 func (r roPresetRepo) FindPresetById(i FindPresetByIdInput) (*RoPreset, error) {
 	var opt = options.FindOneOptions{}

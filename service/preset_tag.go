@@ -2,16 +2,7 @@ package service
 
 import (
 	"ro-backend/repository"
-	"time"
 )
-
-type CreateTagResult struct {
-	Id        string
-	Label     string
-	Tags      []string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
 
 type DeleteTagInput struct {
 	TagId    string
@@ -19,15 +10,25 @@ type DeleteTagInput struct {
 	PresetId string
 }
 
-type RoPresetTag struct {
+type PresetTag struct {
 	repository.RoPreset
 	TagId string
 	Tags  map[string]int
 	Liked bool
 }
 
+type TagWithLiked struct {
+	repository.PresetTag
+	Liked bool
+}
+
+type PresetWithTags struct {
+	repository.RoPreset
+	Tags []TagWithLiked
+}
+
 type PartialSearchTagsResult struct {
-	Items []RoPresetTag
+	Items []PresetTag
 	Total int64
 }
 
@@ -38,9 +39,10 @@ type PartialSearchMetaInput struct {
 }
 
 type PresetTagService interface {
-	CreateTags(repository.CreateTagInput) (*CreateTagResult, error)
-	DeleteTag(DeleteTagInput) (*CreateTagResult, error)
+	CreateTags(repository.CreateTagInput) (*PresetWithTags, error)
+	DeleteTag(DeleteTagInput) (*PresetWithTags, error)
 	LikeTag(repository.LikeTagInput) (*repository.PresetTag, error)
 	UnLikeTag(repository.LikeTagInput) (*repository.PresetTag, error)
 	PartialSearchTags(repository.PartialSearchTagsInput, PartialSearchMetaInput) (*PartialSearchTagsResult, error)
+	AttachTags(userId string, p []repository.RoPreset) ([]PresetWithTags, error)
 }

@@ -18,6 +18,8 @@ type RoPresetService interface {
 	FindPresetsByUserId(string) ([]repository.RoPreset, error)
 	CreatePreset(repository.CreatePresetInput) (*repository.RoPreset, error)
 	BulkCreatePresets(repository.BulkCreatePresetInput) ([]repository.RoPreset, error)
-	UpdatePreset(repository.UpdatePresetInput) (*repository.RoPreset, error)
+	UpdatePreset(id string, i repository.UpdatePresetInput) (*repository.RoPreset, error)
+	PublishPreset(id string, i repository.UpdatePresetInput) (*repository.RoPreset, error)
+	UnPublishPreset(id string, i repository.UpdatePresetInput) (*repository.RoPreset, error)
 	DeletePresetById(CheckPresetOwnerRequest) (*int, error)
 }

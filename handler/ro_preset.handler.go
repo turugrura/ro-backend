@@ -32,6 +32,8 @@ type RoPresetHandler interface {
 	CreatePreset(http.ResponseWriter, *http.Request)
 	BulkCreatePresets(http.ResponseWriter, *http.Request)
 	UpdateMyPreset(http.ResponseWriter, *http.Request)
+	PublishMyPreset(http.ResponseWriter, *http.Request)
+	UnPublishMyPreset(http.ResponseWriter, *http.Request)
 	AddTags(http.ResponseWriter, *http.Request)
 	RemoveTags(http.ResponseWriter, *http.Request)
 	LikeTag(http.ResponseWriter, *http.Request)
@@ -54,12 +56,12 @@ type PartialSearchRoPresetInput struct {
 }
 
 type SearchPresetTagItem struct {
-	Id        string                 `json:"id"`
-	Name      string                 `json:"name"`
-	Model     repository.PresetModel `json:"model"`
-	Tags      map[string]int         `json:"tags"`
-	Liked     bool                   `json:"Liked"`
-	CreatedAt time.Time              `json:"createdAt"`
+	Id          string                 `json:"id"`
+	PublishName string                 `json:"publishName"`
+	Model       repository.PresetModel `json:"model"`
+	Tags        map[string]int         `json:"tags"`
+	Liked       bool                   `json:"Liked"`
+	CreatedAt   time.Time              `json:"createdAt"`
 }
 
 type SearchPresetTagsResponse struct {
@@ -73,10 +75,58 @@ type BulkCreatePresetsResponse struct {
 	Label string `json:"label"`
 }
 
+type TagWithLiked struct {
+	Id          string    `json:"id"`
+	PublisherId string    `json:"publisherId"`
+	Tag         string    `json:"tag"`
+	ClassId     int       `json:"classId"`
+	PresetId    string    `json:"presetId"`
+	TotalLike   int       `json:"totalLike"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	Liked       bool      `json:"liked"`
+}
+
 type GetMyPresetsResponse struct {
+	Id          string         `json:"id"`
+	Label       string         `json:"label"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   time.Time      `json:"updatedAt"`
+	PublishName string         `json:"publishName"`
+	IsPublished bool           `json:"isPublished"`
+	PublishedAt time.Time      `json:"publishedAt"`
+	Tags        []TagWithLiked `json:"tags"`
+}
+
+func (r *GetMyPresetsResponse) From(p service.PresetWithTags) {
+	r.Id = p.Id
+	r.Label = p.Label
+	r.CreatedAt = p.CreatedAt
+	r.UpdatedAt = p.UpdatedAt
+	r.PublishName = p.PublishName
+	r.IsPublished = p.IsPublished
+	r.PublishedAt = p.PublishedAt
+
+	tags := []TagWithLiked{}
+	for _, v := range p.Tags {
+		tags = append(tags, TagWithLiked{
+			Id:          v.Id,
+			PublisherId: v.PublisherId,
+			Tag:         v.Tag,
+			ClassId:     v.ClassId,
+			PresetId:    v.PresetId,
+			TotalLike:   v.TotalLike,
+			CreatedAt:   v.CreatedAt,
+			UpdatedAt:   v.UpdatedAt,
+			Liked:       v.Liked,
+		})
+	}
+	r.Tags = tags
+}
+
+type UpsertTagResponse struct {
 	Id        string    `json:"id"`
 	Label     string    `json:"label"`
-	Tags      []string  `json:"tags"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -91,6 +141,10 @@ type LikeTagResponse struct {
 	ClassId   int    `json:"classId"`
 	PresetId  string `json:"presetId"`
 	TotalLike int    `json:"totalLike"`
+}
+
+type PublishPresetRequest struct {
+	PublishName string `json:"publishName"`
 }
 
 func (h roPresetHandler) AddTags(w http.ResponseWriter, r *http.Request) {
@@ -110,13 +164,8 @@ func (h roPresetHandler) AddTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := GetMyPresetsResponse{
-		Id:        res.Id,
-		Label:     res.Label,
-		Tags:      res.Tags,
-		CreatedAt: res.CreatedAt,
-		UpdatedAt: res.UpdatedAt,
-	}
+	response := GetMyPresetsResponse{}
+	response.From(*res)
 
 	WriteOK(w, response)
 }
@@ -137,13 +186,8 @@ func (h roPresetHandler) RemoveTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := GetMyPresetsResponse{
-		Id:        res.Id,
-		Label:     res.Label,
-		Tags:      res.Tags,
-		CreatedAt: res.CreatedAt,
-		UpdatedAt: res.UpdatedAt,
-	}
+	response := GetMyPresetsResponse{}
+	response.From(*res)
 
 	WriteOK(w, response)
 }
@@ -236,12 +280,12 @@ func (h roPresetHandler) SearchPresetTags(w http.ResponseWriter, r *http.Request
 	items := []SearchPresetTagItem{}
 	for _, v := range res.Items {
 		items = append(items, SearchPresetTagItem{
-			Id:        v.Id,
-			Name:      v.Name,
-			Model:     v.Model,
-			Tags:      v.Tags,
-			Liked:     v.Liked,
-			CreatedAt: v.CreatedAt,
+			Id:          v.Id,
+			PublishName: v.PublishName,
+			Model:       v.Model,
+			Tags:        v.Tags,
+			Liked:       v.Liked,
+			CreatedAt:   v.CreatedAt,
 		})
 	}
 
@@ -259,10 +303,10 @@ func (h roPresetHandler) UpdateMyPreset(w http.ResponseWriter, r *http.Request) 
 	var d repository.UpdatePresetInput
 	json.NewDecoder(r.Body).Decode(&d)
 
-	d.Id = mux.Vars(r)["presetId"]
+	presetId := mux.Vars(r)["presetId"]
 	d.UserId = r.Header.Get("userId")
 
-	res, err := h.roPresetService.UpdatePreset(d)
+	res, err := h.roPresetService.UpdatePreset(presetId, d)
 	if err != nil {
 		WriteErr(w, err.Error())
 		return
@@ -274,6 +318,50 @@ func (h roPresetHandler) UpdateMyPreset(w http.ResponseWriter, r *http.Request) 
 		CreatedAt: res.CreatedAt,
 		UpdatedAt: res.UpdatedAt,
 	}
+
+	WriteOK(w, response)
+}
+
+func (h roPresetHandler) PublishMyPreset(w http.ResponseWriter, r *http.Request) {
+	var d PublishPresetRequest
+	json.NewDecoder(r.Body).Decode(&d)
+
+	presetId := mux.Vars(r)["presetId"]
+	userId := r.Header.Get("userId")
+
+	res, err := h.roPresetService.PublishPreset(presetId, repository.UpdatePresetInput{
+		PublishName: d.PublishName,
+		UserId:      userId,
+	})
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+
+	var response GetMyPresetsResponse
+	response.From(service.PresetWithTags{
+		RoPreset: *res,
+	})
+
+	WriteOK(w, response)
+}
+
+func (h roPresetHandler) UnPublishMyPreset(w http.ResponseWriter, r *http.Request) {
+	presetId := mux.Vars(r)["presetId"]
+	userId := r.Header.Get("userId")
+
+	res, err := h.roPresetService.UnPublishPreset(presetId, repository.UpdatePresetInput{
+		UserId: userId,
+	})
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+
+	var response GetMyPresetsResponse
+	response.From(service.PresetWithTags{
+		RoPreset: *res,
+	})
 
 	WriteOK(w, response)
 }
@@ -331,14 +419,17 @@ func (h roPresetHandler) GetMyPresets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	presetWithTags, err := h.presetTagService.AttachTags(userId, res)
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+
 	response := []GetMyPresetsResponse{}
-	for _, v := range res {
-		response = append(response, GetMyPresetsResponse{
-			Id:        v.Id,
-			Label:     v.Label,
-			CreatedAt: v.CreatedAt,
-			UpdatedAt: v.UpdatedAt,
-		})
+	for _, v := range presetWithTags {
+		var r GetMyPresetsResponse
+		r.From(v)
+		response = append(response, r)
 	}
 
 	WriteOK(w, response)

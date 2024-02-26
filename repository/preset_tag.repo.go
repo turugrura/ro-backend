@@ -18,6 +18,12 @@ type presetTagRepo struct {
 	c *mongo.Collection
 }
 
+func (r presetTagRepo) DeleteTagsByPresetId(presetId string) error {
+	_, err := r.c.DeleteMany(context.Background(), PartialSearchTagsInput{PresetId: presetId})
+
+	return err
+}
+
 func (r presetTagRepo) FindTagById(id string) (*PresetTag, error) {
 	objId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {

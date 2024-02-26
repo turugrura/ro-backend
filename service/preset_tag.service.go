@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"ro-backend/appError"
 	"ro-backend/repository"
 	"slices"
 )
@@ -25,41 +26,55 @@ func (s presetTagService) ValidatePresetOwner(r CheckPresetOwnerRequest) (*repos
 	}
 
 	if res.UserId != r.UserId {
-		return nil, fmt.Errorf("not my preset")
+		return nil, fmt.Errorf(appError.ErrNotMyPreset)
 	}
 
 	return res, nil
 }
 
-func (s presetTagService) AttachTag(p *repository.RoPreset) (*CreateTagResult, error) {
-	tagResults, err := s.tRepo.PartialSearchTags(repository.PartialSearchTagsInput{
-		PresetId: p.Id,
-	}, 0, 99)
+func (s presetTagService) AttachTags(userId string, presets []repository.RoPreset) ([]PresetWithTags, error) {
+	presetIds := []string{}
+	for _, v := range presets {
+		presetIds = append(presetIds, v.Id)
+	}
+
+	tgs, err := s.tRepo.FindByPresetIds(presetIds)
 	if err != nil {
 		return nil, err
 	}
 
-	tags := []string{}
-	for _, t := range tagResults.Items {
-		tags = append(tags, t.Tag)
+	presetTagsMap := map[string][]TagWithLiked{}
+	for _, v := range tgs {
+		if presetTagsMap[v.PresetId] == nil {
+			presetTagsMap[v.PresetId] = []TagWithLiked{}
+		}
+		presetTagsMap[v.PresetId] = append(presetTagsMap[v.PresetId], TagWithLiked{
+			PresetTag: v,
+			Liked:     v.IsILike(userId),
+		})
 	}
 
-	return &CreateTagResult{
-		Id:        p.Id,
-		Label:     p.Label,
-		Tags:      tags,
-		CreatedAt: p.CreatedAt,
-		UpdatedAt: p.UpdatedAt,
-	}, nil
+	presetTags := []PresetWithTags{}
+	for _, v := range presets {
+		presetTags = append(presetTags, PresetWithTags{
+			RoPreset: v,
+			Tags:     presetTagsMap[v.Id],
+		})
+	}
+
+	return presetTags, nil
 }
 
-func (s presetTagService) CreateTags(i repository.CreateTagInput) (*CreateTagResult, error) {
+func (s presetTagService) CreateTags(i repository.CreateTagInput) (*PresetWithTags, error) {
 	p, err := s.ValidatePresetOwner(CheckPresetOwnerRequest{
 		Id:     i.PresetId,
 		UserId: i.PublisherId,
 	})
 	if err != nil {
 		return nil, err
+	}
+	if !p.IsPublished {
+		return nil, fmt.Errorf(appError.ErrCannotTagUnpublished)
 	}
 
 	i.ClassId = p.ClassId
@@ -68,10 +83,15 @@ func (s presetTagService) CreateTags(i repository.CreateTagInput) (*CreateTagRes
 		return nil, err
 	}
 
-	return s.AttachTag(p)
+	t, err := s.AttachTags(i.PublisherId, []repository.RoPreset{*p})
+	if err != nil {
+		return nil, err
+	}
+
+	return &t[0], nil
 }
 
-func (s presetTagService) DeleteTag(i DeleteTagInput) (*CreateTagResult, error) {
+func (s presetTagService) DeleteTag(i DeleteTagInput) (*PresetWithTags, error) {
 	p, err := s.ValidatePresetOwner(CheckPresetOwnerRequest{
 		Id:     i.PresetId,
 		UserId: i.UserId,
@@ -79,13 +99,21 @@ func (s presetTagService) DeleteTag(i DeleteTagInput) (*CreateTagResult, error) 
 	if err != nil {
 		return nil, err
 	}
+	if !p.IsPublished {
+		return nil, fmt.Errorf(appError.ErrCannotTagUnpublished)
+	}
 
 	err = s.tRepo.DeleteTag(i.TagId)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.AttachTag(p)
+	t, err := s.AttachTags(i.UserId, []repository.RoPreset{*p})
+	if err != nil {
+		return nil, err
+	}
+
+	return &t[0], nil
 }
 
 func (s presetTagService) LikeTag(i repository.LikeTagInput) (*repository.PresetTag, error) {
@@ -136,13 +164,13 @@ func (s presetTagService) PartialSearchTags(i repository.PartialSearchTagsInput,
 		presetTagsMap[v.PresetId][v.Tag] = len(v.Likes)
 	}
 
-	presetTags := []RoPresetTag{}
+	presetTags := []PresetTag{}
 	for _, v := range tags.Items {
-		presetTags = append(presetTags, RoPresetTag{
+		presetTags = append(presetTags, PresetTag{
 			RoPreset: presetMap[v.PresetId],
 			TagId:    v.Id,
 			Tags:     presetTagsMap[v.PresetId],
-			Liked:    slices.Contains(v.Likes, si.UserId),
+			Liked:    v.IsILike(si.UserId),
 		})
 	}
 

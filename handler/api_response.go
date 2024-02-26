@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"ro-backend/appError"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -12,34 +13,28 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-const (
-	ErrUnverifiedEmail        = "Email is unverified"
-	ErrEmptyEmail             = "Email is empty"
-	ErrNotTimeForRefreshToken = "token is not valid yet"
-	ErrUserNotFound           = "User not found"
-
-	ErrForbidden        = "forbidden"
-	ErrUnAuthentication = "unAuthentication"
-	ErrNotMyPreset      = "not my preset"
-)
-
 func WriteErr(w http.ResponseWriter, msg string) {
 	var message = msg
 	var httpStatus = http.StatusInternalServerError
 
 	switch msg {
-	case ErrNotMyPreset:
-		httpStatus = http.StatusNotFound
-		message = http.StatusText(httpStatus)
 	case mongo.ErrNoDocuments.Error():
 		httpStatus = http.StatusNotFound
 		message = http.StatusText(httpStatus)
 	case primitive.ErrInvalidHex.Error():
 		httpStatus = http.StatusBadRequest
-	case ErrForbidden:
+
+	case appError.ErrNotMyPreset:
+		httpStatus = http.StatusNotFound
+		message = http.StatusText(httpStatus)
+	case appError.ErrCannotTagUnpublished:
+		httpStatus = http.StatusBadRequest
+	case appError.ErrCannotUpdatePublishedPreset:
+		httpStatus = http.StatusBadRequest
+	case appError.ErrForbidden:
 		httpStatus = http.StatusForbidden
 		message = http.StatusText(httpStatus)
-	case ErrUnAuthentication:
+	case appError.ErrUnAuthentication:
 		httpStatus = http.StatusUnauthorized
 		message = http.StatusText(httpStatus)
 	}
