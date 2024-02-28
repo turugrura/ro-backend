@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"ro-backend/repository"
 	"ro-backend/service"
@@ -28,6 +29,7 @@ func NewRoPresetHandler(p RoPresetHandlerParam) RoPresetHandler {
 type RoPresetHandler interface {
 	GetMyPresetById(http.ResponseWriter, *http.Request)
 	GetMyPresets(http.ResponseWriter, *http.Request)
+	GetMyEntirePresets(http.ResponseWriter, *http.Request)
 	SearchPresetTags(http.ResponseWriter, *http.Request)
 	CreatePreset(http.ResponseWriter, *http.Request)
 	BulkCreatePresets(http.ResponseWriter, *http.Request)
@@ -124,6 +126,45 @@ func (r *GetMyPresetsResponse) From(p service.PresetWithTags) {
 	r.Tags = tags
 }
 
+type GetMyEntirePresetsResponse struct {
+	Id          string                 `json:"id"`
+	Label       string                 `json:"label"`
+	CreatedAt   time.Time              `json:"createdAt"`
+	UpdatedAt   time.Time              `json:"updatedAt"`
+	PublishName string                 `json:"publishName"`
+	IsPublished bool                   `json:"isPublished"`
+	PublishedAt time.Time              `json:"publishedAt"`
+	Tags        []TagWithLiked         `json:"tags"`
+	Model       repository.PresetModel `json:"model"`
+}
+
+func (r *GetMyEntirePresetsResponse) From(p service.PresetWithTags) {
+	r.Id = p.Id
+	r.Label = p.Label
+	r.CreatedAt = p.CreatedAt
+	r.UpdatedAt = p.UpdatedAt
+	r.PublishName = p.PublishName
+	r.IsPublished = p.IsPublished
+	r.PublishedAt = p.PublishedAt
+	r.Model = p.Model
+
+	tags := []TagWithLiked{}
+	for _, v := range p.Tags {
+		tags = append(tags, TagWithLiked{
+			Id:          v.Id,
+			PublisherId: v.PublisherId,
+			Tag:         v.Tag,
+			ClassId:     v.ClassId,
+			PresetId:    v.PresetId,
+			TotalLike:   v.TotalLike,
+			CreatedAt:   v.CreatedAt,
+			UpdatedAt:   v.UpdatedAt,
+			Liked:       v.Liked,
+		})
+	}
+	r.Tags = tags
+}
+
 type UpsertTagResponse struct {
 	Id        string    `json:"id"`
 	Label     string    `json:"label"`
@@ -145,6 +186,10 @@ type LikeTagResponse struct {
 
 type PublishPresetRequest struct {
 	PublishName string `json:"publishName"`
+}
+
+type BulkErrResponse struct {
+	ErrMsg string `json:"errorMessage"`
 }
 
 func (h roPresetHandler) AddTags(w http.ResponseWriter, r *http.Request) {
@@ -386,10 +431,26 @@ func (h roPresetHandler) BulkCreatePresets(w http.ResponseWriter, r *http.Reques
 	var d repository.BulkCreatePresetInput
 	json.NewDecoder(r.Body).Decode(&d)
 
-	var response = []BulkCreatePresetsResponse{}
-
 	if len(d.BulkData) == 0 {
-		json.NewEncoder(w).Encode(response)
+		WriteOK(w, []repository.RoPreset{})
+		return
+	}
+
+	errResponse := []BulkErrResponse{}
+	for i, v := range d.BulkData {
+		if v.Label == "" {
+			errResponse = append(errResponse, BulkErrResponse{
+				ErrMsg: fmt.Sprintf("preset number '%v' has empty label", i),
+			})
+		} else if err := v.Model.Validate(); err != nil {
+			errResponse = append(errResponse, BulkErrResponse{
+				ErrMsg: fmt.Sprintf("preset '%v' is invalid", v.Label),
+			})
+		}
+	}
+	if len(errResponse) > 0 {
+		WriteErrObj(w, http.StatusBadRequest, errResponse)
+		return
 	}
 
 	userId := r.Header.Get("userId")
@@ -401,19 +462,13 @@ func (h roPresetHandler) BulkCreatePresets(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	for i := 0; i < len(res); i++ {
-		response = append(response, BulkCreatePresetsResponse{
-			Label: (res)[i].Label,
-		})
-	}
-
-	WriteCreated(w, response)
+	WriteCreated(w, res)
 }
 
 func (h roPresetHandler) GetMyPresets(w http.ResponseWriter, r *http.Request) {
 	userId := r.Header.Get("userId")
 
-	res, err := h.roPresetService.FindPresetsByUserId(userId)
+	res, err := h.roPresetService.FindPresetsByUserId(userId, false)
 	if err != nil {
 		WriteErr(w, err.Error())
 		return
@@ -435,9 +490,38 @@ func (h roPresetHandler) GetMyPresets(w http.ResponseWriter, r *http.Request) {
 	WriteOK(w, response)
 }
 
+func (h roPresetHandler) GetMyEntirePresets(w http.ResponseWriter, r *http.Request) {
+	userId := r.Header.Get("userId")
+
+	res, err := h.roPresetService.FindPresetsByUserId(userId, true)
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+
+	presetWithTags, err := h.presetTagService.AttachTags(userId, res)
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+
+	response := []GetMyEntirePresetsResponse{}
+	for _, v := range presetWithTags {
+		var r GetMyEntirePresetsResponse
+		r.From(v)
+		response = append(response, r)
+	}
+
+	WriteOK(w, response)
+}
+
 func (h roPresetHandler) CreatePreset(w http.ResponseWriter, r *http.Request) {
 	var d repository.CreatePresetInput
 	json.NewDecoder(r.Body).Decode(&d)
+	if err := d.Validate(); err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
 
 	d.UserId = r.Header.Get("userId")
 

@@ -69,10 +69,13 @@ func main() {
 		UserService:      userService,
 		PresetTagService: roTagService,
 	})
+	var helpCheckHandler = handler.NewHelpCheckHandler()
 
 	r := newAppRouter(mux.NewRouter())
 	r.use(jsonResponseMiddleware)
 	r.use(rateLimitMiddleware)
+
+	r.get("/ping", helpCheckHandler.Ping)
 
 	r.get("/auth/{provider}/callback", authHandler.AuthenticationCallback)
 	r.get("/auth/{provider}", gothic.BeginAuthHandler)
@@ -87,6 +90,7 @@ func main() {
 	me.post("", userHandler.PatchMyProfile)
 	me.post("/logout", authHandler.Logout)
 	me.post("/bulk_ro_presets", roPresetHandler.BulkCreatePresets)
+	me.get("/ro_entire_presets", roPresetHandler.GetMyEntirePresets)
 	me.get("/ro_presets", roPresetHandler.GetMyPresets)
 	me.post("/ro_presets", roPresetHandler.CreatePreset)
 
@@ -211,6 +215,11 @@ func connectMongoDB() (err error) {
 		{
 			Keys: bson.M{
 				"id": 1,
+			},
+		},
+		{
+			Keys: bson.M{
+				"user_id": 1,
 			},
 		},
 	})

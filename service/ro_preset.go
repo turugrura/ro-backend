@@ -15,7 +15,7 @@ type FindPresetsByTagsRequest struct {
 
 type RoPresetService interface {
 	FindPresetById(CheckPresetOwnerRequest) (*repository.RoPreset, error)
-	FindPresetsByUserId(string) ([]repository.RoPreset, error)
+	FindPresetsByUserId(userId string, includeModel bool) ([]repository.RoPreset, error)
 	CreatePreset(repository.CreatePresetInput) (*repository.RoPreset, error)
 	BulkCreatePresets(repository.BulkCreatePresetInput) ([]repository.RoPreset, error)
 	UpdatePreset(id string, i repository.UpdatePresetInput) (*repository.RoPreset, error)

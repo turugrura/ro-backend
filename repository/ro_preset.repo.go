@@ -85,6 +85,9 @@ func (r roPresetRepo) PartialSearchPresets(i PartialSearchRoPresetInput) (*Parti
 		Projection: opt.Projection,
 		Skip:       &skip,
 		Limit:      &take,
+		Sort: PresetListSorting{
+			UpdatedAt: -1,
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -137,7 +140,8 @@ func (r roPresetRepo) CreatePreset(i CreatePresetInput) (*RoPreset, error) {
 }
 
 func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) ([]RoPreset, error) {
-	var models []mongo.WriteModel
+	var models []interface{}
+	now := time.Now()
 	for i := 0; i < len(ip.BulkData); i++ {
 		var cur = ip.BulkData[i]
 		var p = RoPreset{
@@ -146,24 +150,30 @@ func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) ([]RoPreset, error
 			Label:     cur.Label,
 			Model:     cur.Model,
 			ClassId:   cur.Model.Class,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: now,
+			UpdatedAt: now,
 		}
-		models = append(models, mongo.NewInsertOneModel().SetDocument(p))
+		models = append(models, p)
 	}
 
-	res, err := r.collection.BulkWrite(context.Background(), models)
+	res, err := r.collection.InsertMany(context.Background(), models)
 	if err != nil {
 		return nil, err
 	}
 
-	var presets = []RoPreset{}
-	for i := 0; i < int(res.InsertedCount); i++ {
-		presets = append(presets, RoPreset{
-			UserId: ip.UserId,
-			Label:  ip.BulkData[i].Label,
-			Model:  ip.BulkData[i].Model,
-		})
+	inserted, err := r.collection.Find(context.Background(), bson.M{
+		"_id": bson.M{
+			"$in": res.InsertedIDs,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var presets []RoPreset
+	err = inserted.All(context.Background(), &presets)
+	if err != nil {
+		return nil, err
 	}
 
 	return presets, nil

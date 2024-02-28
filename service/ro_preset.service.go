@@ -120,10 +120,10 @@ func (s roPresetService) BulkCreatePresets(r repository.BulkCreatePresetInput) (
 	return s.presetRepo.CreatePresets(r)
 }
 
-func (s roPresetService) FindPresetsByUserId(userId string) ([]repository.RoPreset, error) {
+func (s roPresetService) FindPresetsByUserId(userId string, includeModel bool) ([]repository.RoPreset, error) {
 	res, err := s.presetRepo.PartialSearchPresets(repository.PartialSearchRoPresetInput{
 		UserId:       &userId,
-		InCludeModel: false,
+		InCludeModel: includeModel,
 	})
 	if err != nil {
 		return nil, err

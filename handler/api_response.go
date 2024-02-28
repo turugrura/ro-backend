@@ -13,6 +13,11 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
+func WriteErrObj(w http.ResponseWriter, httpStatus int, res interface{}) {
+	w.WriteHeader(httpStatus)
+	json.NewEncoder(w).Encode(res)
+}
+
 func WriteErr(w http.ResponseWriter, msg string) {
 	var message = msg
 	var httpStatus = http.StatusInternalServerError
@@ -27,6 +32,8 @@ func WriteErr(w http.ResponseWriter, msg string) {
 	case appError.ErrNotMyPreset:
 		httpStatus = http.StatusNotFound
 		message = http.StatusText(httpStatus)
+	case appError.ErrInvalidPresetInput:
+		httpStatus = http.StatusBadRequest
 	case appError.ErrCannotTagUnpublished:
 		httpStatus = http.StatusBadRequest
 	case appError.ErrCannotUpdatePublishedPreset:

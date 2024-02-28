@@ -207,6 +207,10 @@ func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := h.userService.FindUserById(claims.Issuer)
+	if err == mongo.ErrNoDocuments {
+		WriteErr(w, appError.ErrUnAuthentication)
+		return
+	}
 	if err != nil {
 		WriteErr(w, err.Error())
 		return
@@ -227,6 +231,10 @@ func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 			Role:      user.Role,
 		},
 	})
+	if err == mongo.ErrNoDocuments {
+		WriteErr(w, appError.ErrUnAuthentication)
+		return
+	}
 	if err != nil {
 		WriteErr(w, err.Error())
 		return
