@@ -38,8 +38,17 @@ type PartialSearchMetaInput struct {
 	Limit  int
 }
 
+type BulkOperationInput struct {
+	PublisherId string
+	ClassId     int
+	PresetId    string
+	CreateTags  []string
+	DeleteTags  []string
+}
+
 type PresetTagService interface {
 	CreateTags(repository.CreateTagInput) (*PresetWithTags, error)
+	BulkOperationTags(BulkOperationInput) (*PresetWithTags, error)
 	DeleteTag(DeleteTagInput) (*PresetWithTags, error)
 	LikeTag(repository.LikeTagInput) (*repository.PresetTag, error)
 	UnLikeTag(repository.LikeTagInput) (*repository.PresetTag, error)

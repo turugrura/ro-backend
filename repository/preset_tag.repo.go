@@ -18,6 +18,52 @@ type presetTagRepo struct {
 	c *mongo.Collection
 }
 
+func (r presetTagRepo) BulkOperationTags(createsInput CreateTagInput, deleteIds []string) error {
+	bulks := []mongo.WriteModel{}
+	now := time.Now()
+	for _, tag := range createsInput.Tags {
+		bulks = append(bulks, mongo.NewInsertOneModel().SetDocument(PresetTag{
+			PublisherId: createsInput.PublisherId,
+			Tag:         tag,
+			ClassId:     createsInput.ClassId,
+			PresetId:    createsInput.PresetId,
+			Likes:       []string{},
+			TotalLike:   0,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}))
+	}
+
+	for _, id := range deleteIds {
+		objId, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return err
+		}
+		bulks = append(bulks, mongo.NewDeleteOneModel().SetFilter(bson.M{"_id": objId}))
+	}
+
+	_, err := r.c.BulkWrite(context.Background(), bulks)
+
+	return err
+}
+
+func (r presetTagRepo) FindTagsByPresetId(presetId string) ([]PresetTag, error) {
+	cur, err := r.c.Find(context.Background(), PartialSearchTagsInput{
+		PresetId: presetId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tags := []PresetTag{}
+	err = cur.All(context.Background(), &tags)
+	if err != nil {
+		return nil, err
+	}
+
+	return tags, nil
+}
+
 func (r presetTagRepo) DeleteTagsByPresetId(presetId string) error {
 	_, err := r.c.DeleteMany(context.Background(), PartialSearchTagsInput{PresetId: presetId})
 

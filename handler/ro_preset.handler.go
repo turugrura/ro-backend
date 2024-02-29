@@ -37,6 +37,7 @@ type RoPresetHandler interface {
 	PublishMyPreset(http.ResponseWriter, *http.Request)
 	UnPublishMyPreset(http.ResponseWriter, *http.Request)
 	AddTags(http.ResponseWriter, *http.Request)
+	BulkOperationTags(http.ResponseWriter, *http.Request)
 	RemoveTags(http.ResponseWriter, *http.Request)
 	LikeTag(http.ResponseWriter, *http.Request)
 	UnLikeTag(http.ResponseWriter, *http.Request)
@@ -62,7 +63,7 @@ type SearchPresetTagItem struct {
 	PublishName string                 `json:"publishName"`
 	Model       repository.PresetModel `json:"model"`
 	Tags        map[string]int         `json:"tags"`
-	Liked       bool                   `json:"Liked"`
+	Liked       bool                   `json:"liked"`
 	CreatedAt   time.Time              `json:"createdAt"`
 }
 
@@ -192,6 +193,14 @@ type BulkErrResponse struct {
 	ErrMsg string `json:"errorMessage"`
 }
 
+type BulkOperationRequest struct {
+	PublisherId string   `json:"publisherId"`
+	ClassId     int      `json:"classId"`
+	PresetId    string   `json:"presetId"`
+	CreateTags  []string `json:"createTags"`
+	DeleteTags  []string `json:"deleteTags"`
+}
+
 func (h roPresetHandler) AddTags(w http.ResponseWriter, r *http.Request) {
 	var d CreateTagRequest
 	json.NewDecoder(r.Body).Decode(&d)
@@ -226,6 +235,29 @@ func (h roPresetHandler) RemoveTags(w http.ResponseWriter, r *http.Request) {
 		UserId:   userId,
 		PresetId: presetId,
 	})
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+
+	response := GetMyPresetsResponse{}
+	response.From(*res)
+
+	WriteOK(w, response)
+}
+
+func (h roPresetHandler) BulkOperationTags(w http.ResponseWriter, r *http.Request) {
+	pathVars := mux.Vars(r)
+	presetId := pathVars["presetId"]
+	userId := r.Header.Get("userId")
+
+	var req BulkOperationRequest
+	json.NewDecoder(r.Body).Decode(&req)
+
+	req.PublisherId = userId
+	req.PresetId = presetId
+
+	res, err := h.presetTagService.BulkOperationTags(service.BulkOperationInput(req))
 	if err != nil {
 		WriteErr(w, err.Error())
 		return

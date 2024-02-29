@@ -58,7 +58,9 @@ type PartialSearchTagsResult struct {
 
 type PresetTagRepository interface {
 	FindTagById(string) (*PresetTag, error)
+	FindTagsByPresetId(string) ([]PresetTag, error)
 	CreateTags(CreateTagInput) ([]string, error)
+	BulkOperationTags(createInput CreateTagInput, createIds []string) error
 	DeleteTag(id string) error
 	DeleteTagsByPresetId(presetId string) error
 	LikeTag(LikeTagInput) error

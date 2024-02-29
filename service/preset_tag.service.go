@@ -91,6 +91,61 @@ func (s presetTagService) CreateTags(i repository.CreateTagInput) (*PresetWithTa
 	return &t[0], nil
 }
 
+func (s presetTagService) BulkOperationTags(i BulkOperationInput) (*PresetWithTags, error) {
+	p, err := s.ValidatePresetOwner(CheckPresetOwnerRequest{
+		Id:     i.PresetId,
+		UserId: i.PublisherId,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !p.IsPublished {
+		return nil, fmt.Errorf(appError.ErrCannotTagUnpublished)
+	}
+
+	tags, err := s.tRepo.FindTagsByPresetId(p.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	tagMap := map[string]repository.PresetTag{}
+	for _, v := range tags {
+		tagMap[v.Tag] = v
+	}
+
+	createTags := repository.CreateTagInput{
+		PublisherId: i.PublisherId,
+		ClassId:     i.ClassId,
+		PresetId:    i.PresetId,
+		Tags:        []string{},
+	}
+	for _, v := range i.CreateTags {
+		if _, found := tagMap[v]; !found {
+			createTags.Tags = append(createTags.Tags, v)
+		}
+	}
+
+	deleteTagIds := []string{}
+	for _, v := range i.DeleteTags {
+		if tag, found := tagMap[v]; found {
+			deleteTagIds = append(deleteTagIds, tag.Id)
+		}
+	}
+
+	i.ClassId = p.ClassId
+	err = s.tRepo.BulkOperationTags(createTags, deleteTagIds)
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := s.AttachTags(i.PublisherId, []repository.RoPreset{*p})
+	if err != nil {
+		return nil, err
+	}
+
+	return &t[0], nil
+}
+
 func (s presetTagService) DeleteTag(i DeleteTagInput) (*PresetWithTags, error) {
 	p, err := s.ValidatePresetOwner(CheckPresetOwnerRequest{
 		Id:     i.PresetId,

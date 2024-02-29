@@ -100,7 +100,7 @@ func main() {
 	me.post("/ro_presets/{presetId}/publish", roPresetHandler.PublishMyPreset)
 	me.delete("/ro_presets/{presetId}/publish", roPresetHandler.UnPublishMyPreset)
 
-	me.post("/ro_presets/{presetId}/tags", roPresetHandler.AddTags)
+	me.post("/ro_presets/{presetId}/tags", roPresetHandler.BulkOperationTags)
 	me.delete("/ro_presets/{presetId}/tags/{tagId}", roPresetHandler.RemoveTags)
 
 	// ------
