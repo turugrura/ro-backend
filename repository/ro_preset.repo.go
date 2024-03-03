@@ -18,6 +18,16 @@ type roPresetRepo struct {
 	collection *mongo.Collection
 }
 
+func (r roPresetRepo) UpdateUserName(userId string, userName string) error {
+	_, err := r.collection.UpdateMany(context.Background(), PartialSearchRoPresetInput{
+		UserId: &userId,
+	}, UpdatePresetInput{
+		UserName: userName,
+	})
+
+	return err
+}
+
 func (r roPresetRepo) UnpublishedPreset(id string) error {
 	_, err := r.collection.UpdateOne(context.Background(), IdSearchInput{Id: id}, bson.M{
 		"$set": UnPublishPresetInput{

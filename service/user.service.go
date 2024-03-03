@@ -5,8 +5,13 @@ import (
 	"ro-backend/repository"
 )
 
+func NewUserService(userRepo repository.UserRepository, presetRepo repository.RoPresetRepository) UserService {
+	return userService{userRepository: userRepo, presetRepo: presetRepo}
+}
+
 type userService struct {
 	userRepository repository.UserRepository
+	presetRepo     repository.RoPresetRepository
 }
 
 func (s userService) PatchUser(r PatchUserRequest) (*repository.User, error) {
@@ -17,11 +22,9 @@ func (s userService) PatchUser(r PatchUserRequest) (*repository.User, error) {
 		return nil, err
 	}
 
-	return s.userRepository.FindUserById(r.Id)
-}
+	s.presetRepo.UpdateUserName(r.Id, r.Name)
 
-func NewUserService(userRepo repository.UserRepository) UserService {
-	return userService{userRepository: userRepo}
+	return s.userRepository.FindUserById(r.Id)
 }
 
 func (s userService) CreateUser(req CreateUserRequest) (*repository.User, error) {

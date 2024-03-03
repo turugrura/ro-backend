@@ -75,6 +75,13 @@ func (s roPresetService) PublishPreset(id string, i repository.UpdatePresetInput
 		return nil, err
 	}
 
+	s.tagRepo.CreateTags(repository.CreateTagInput{
+		PublisherId: i.UserId,
+		Tags:        []string{"no_tag"},
+		ClassId:     p.ClassId,
+		PresetId:    p.Id,
+	})
+
 	return s.presetRepo.FindPresetById(repository.FindPresetByIdInput{
 		Id:           id,
 		InCludeModel: false,

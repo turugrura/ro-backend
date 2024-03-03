@@ -50,5 +50,6 @@ type UserRepository interface {
 	CreateUser(CreateUserInput) (*User, error)
 	PatchUser(id string, u UpdateUserInput) error
 	FindUserById(string) (*User, error)
+	FindUsersByIds([]string) ([]User, error)
 	FindUserByEmail(string) (*User, error)
 }

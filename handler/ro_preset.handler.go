@@ -59,12 +59,14 @@ type PartialSearchRoPresetInput struct {
 }
 
 type SearchPresetTagItem struct {
-	Id          string                 `json:"id"`
-	PublishName string                 `json:"publishName"`
-	Model       repository.PresetModel `json:"model"`
-	Tags        map[string]int         `json:"tags"`
-	Liked       bool                   `json:"liked"`
-	CreatedAt   time.Time              `json:"createdAt"`
+	PresetId      string                 `json:"presetId"`
+	TagId         string                 `json:"tagId"`
+	PublisherName string                 `json:"publisherName"`
+	PublishName   string                 `json:"publishName"`
+	Model         repository.PresetModel `json:"model"`
+	Tags          map[string]int         `json:"tags"`
+	Liked         bool                   `json:"liked"`
+	CreatedAt     time.Time              `json:"createdAt"`
 }
 
 type SearchPresetTagsResponse struct {
@@ -178,11 +180,13 @@ type CreateTagRequest struct {
 }
 
 type LikeTagResponse struct {
-	Id        string `json:"id"`
-	Tag       string `json:"tag"`
-	ClassId   int    `json:"classId"`
-	PresetId  string `json:"presetId"`
-	TotalLike int    `json:"totalLike"`
+	Id            string `json:"id"`
+	Tag           string `json:"tag"`
+	PublisherName string `json:"publisherName"`
+	ClassId       int    `json:"classId"`
+	PresetId      string `json:"presetId"`
+	TotalLike     int    `json:"totalLike"`
+	Liked         bool   `json:"liked"`
 }
 
 type PublishPresetRequest struct {
@@ -288,6 +292,7 @@ func (h roPresetHandler) LikeTag(w http.ResponseWriter, r *http.Request) {
 		ClassId:   res.ClassId,
 		PresetId:  res.PresetId,
 		TotalLike: res.TotalLike,
+		Liked:     true,
 	}
 
 	WriteOK(w, response)
@@ -312,6 +317,7 @@ func (h roPresetHandler) UnLikeTag(w http.ResponseWriter, r *http.Request) {
 		ClassId:   res.ClassId,
 		PresetId:  res.PresetId,
 		TotalLike: res.TotalLike,
+		Liked:     false,
 	}
 
 	WriteOK(w, response)
@@ -357,12 +363,14 @@ func (h roPresetHandler) SearchPresetTags(w http.ResponseWriter, r *http.Request
 	items := []SearchPresetTagItem{}
 	for _, v := range res.Items {
 		items = append(items, SearchPresetTagItem{
-			Id:          v.Id,
-			PublishName: v.PublishName,
-			Model:       v.Model,
-			Tags:        v.Tags,
-			Liked:       v.Liked,
-			CreatedAt:   v.CreatedAt,
+			TagId:         v.TagId,
+			PresetId:      v.Id,
+			PublisherName: v.UserName,
+			PublishName:   v.PublishName,
+			Model:         v.Model,
+			Tags:          v.Tags,
+			Liked:         v.Liked,
+			CreatedAt:     v.CreatedAt,
 		})
 	}
 

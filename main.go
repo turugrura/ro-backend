@@ -52,11 +52,11 @@ func main() {
 	var roPresetRepo = repository.NewRoPresetRepository(roPresetCollection)
 	var roTagRepo = repository.NewPresetTagRepository(roTagCollection)
 
-	var userService = service.NewUserService(userRepo)
+	var userService = service.NewUserService(userRepo, roPresetRepo)
 	var tokenService = service.NewTokenService(refreshTokenRepo)
 	var authDataService = service.NewAuthenticationDataService(authDataRepo)
 	var roPresetService = service.NewRoPresetService(roPresetRepo, roTagRepo)
-	var roTagService = service.NewPresetTagService(roTagRepo, roPresetRepo)
+	var roTagService = service.NewPresetTagService(roTagRepo, roPresetRepo, userRepo)
 
 	var authHandler = handler.NewAuthHandler(handler.AuthHandlerParam{
 		UserService:               userService,

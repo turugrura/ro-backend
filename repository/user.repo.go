@@ -10,12 +10,40 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+func NewUserRepo(collection *mongo.Collection) UserRepository {
+	return userRepo{collection: collection}
+}
+
 type userRepo struct {
 	collection *mongo.Collection
 }
 
-func NewUserRepo(collection *mongo.Collection) UserRepository {
-	return userRepo{collection: collection}
+func (repo userRepo) FindUsersByIds(ids []string) ([]User, error) {
+	objIds := []primitive.ObjectID{}
+	for _, v := range ids {
+		objId, err := primitive.ObjectIDFromHex(v)
+		if err != nil {
+			return nil, err
+		}
+		objIds = append(objIds, objId)
+	}
+
+	cur, err := repo.collection.Find(context.Background(), bson.M{
+		"_id": bson.M{
+			"$in": objIds,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	users := []User{}
+	err = cur.All(context.Background(), &users)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 func (repo userRepo) CreateUser(input CreateUserInput) (*User, error) {

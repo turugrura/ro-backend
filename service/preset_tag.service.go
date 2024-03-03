@@ -7,13 +7,14 @@ import (
 	"slices"
 )
 
-func NewPresetTagService(tRepo repository.PresetTagRepository, pRepo repository.RoPresetRepository) PresetTagService {
-	return presetTagService{tRepo: tRepo, pRepo: pRepo}
+func NewPresetTagService(tRepo repository.PresetTagRepository, pRepo repository.RoPresetRepository, userRepo repository.UserRepository) PresetTagService {
+	return presetTagService{tRepo: tRepo, pRepo: pRepo, userRepo: userRepo}
 }
 
 type presetTagService struct {
-	pRepo repository.RoPresetRepository
-	tRepo repository.PresetTagRepository
+	pRepo    repository.RoPresetRepository
+	tRepo    repository.PresetTagRepository
+	userRepo repository.UserRepository
 }
 
 func (s presetTagService) ValidatePresetOwner(r CheckPresetOwnerRequest) (*repository.RoPreset, error) {
@@ -115,8 +116,8 @@ func (s presetTagService) BulkOperationTags(i BulkOperationInput) (*PresetWithTa
 
 	createTags := repository.CreateTagInput{
 		PublisherId: i.PublisherId,
-		ClassId:     i.ClassId,
-		PresetId:    i.PresetId,
+		ClassId:     p.ClassId,
+		PresetId:    p.Id,
 		Tags:        []string{},
 	}
 	for _, v := range i.CreateTags {

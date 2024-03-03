@@ -127,6 +127,7 @@ type PresetModel struct {
 type RoPreset struct {
 	Id          string      `bson:"id" json:"id"`
 	UserId      string      `bson:"user_id" json:"userId"`
+	UserName    string      `bson:"user_name" json:"userName"`
 	Label       string      `bson:"label" json:"label"`
 	Model       PresetModel `bson:"model" json:"model"`
 	ClassId     int         `bson:"class_id" json:"classId"`
@@ -169,6 +170,7 @@ func (i *CreatePresetInput) Validate() error {
 type UpdatePresetInput struct {
 	ClassId     int          `bson:"class_id,omitempty" json:"classId"`
 	UserId      string       `bson:"user_id,omitempty" json:"userId"`
+	UserName    string       `bson:"user_name,omitempty" json:"userName"`
 	Label       string       `bson:"label,omitempty" json:"label"`
 	Model       *PresetModel `bson:"model,omitempty" json:"model"`
 	UpdatedAt   time.Time    `bson:"updated_at,omitempty" json:"updatedAt"`
@@ -230,6 +232,7 @@ type RoPresetRepository interface {
 	CreatePreset(CreatePresetInput) (*RoPreset, error)
 	CreatePresets(BulkCreatePresetInput) ([]RoPreset, error)
 	UpdatePreset(id string, i UpdatePresetInput) error
+	UpdateUserName(userId, userName string) error
 	UnpublishedPreset(id string) error
 	DeletePresetById(string) (*int, error)
 }
