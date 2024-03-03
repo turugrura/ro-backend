@@ -207,6 +207,13 @@ type PartialSearchRoPresetInput struct {
 	InCludeModel bool
 }
 
+type PartialSearchRoPresetForUpdateInput struct {
+	Id      string `bson:"id,omitempty"`
+	UserId  string `bson:"user_id,omitempty"`
+	ClassId int    `bson:"class_id,omitempty"`
+	Label   string `bson:"label,omitempty"`
+}
+
 type IdSearchInput struct {
 	Id string `bson:"id"`
 }

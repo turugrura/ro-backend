@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,11 +20,14 @@ type roPresetRepo struct {
 }
 
 func (r roPresetRepo) UpdateUserName(userId string, userName string) error {
-	_, err := r.collection.UpdateMany(context.Background(), PartialSearchRoPresetInput{
-		UserId: &userId,
-	}, UpdatePresetInput{
-		UserName: userName,
+	_x, err := r.collection.UpdateMany(context.Background(), PartialSearchRoPresetForUpdateInput{
+		UserId: userId,
+	}, bson.M{
+		"$set": UpdatePresetInput{
+			UserName: userName,
+		},
 	})
+	fmt.Println("userName", userId, "cnt", _x.ModifiedCount)
 
 	return err
 }

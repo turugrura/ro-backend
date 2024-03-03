@@ -22,7 +22,10 @@ func (s userService) PatchUser(r PatchUserRequest) (*repository.User, error) {
 		return nil, err
 	}
 
-	s.presetRepo.UpdateUserName(r.Id, r.Name)
+	err = s.presetRepo.UpdateUserName(r.Id, r.Name)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	return s.userRepository.FindUserById(r.Id)
 }
