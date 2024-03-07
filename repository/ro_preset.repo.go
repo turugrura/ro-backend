@@ -136,6 +136,7 @@ func (r roPresetRepo) CreatePreset(i CreatePresetInput) (*RoPreset, error) {
 		Label:     i.Label,
 		Model:     i.Model,
 		ClassId:   i.Model.Class,
+		UserName:  i.UserName,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	})
@@ -162,6 +163,7 @@ func (r roPresetRepo) CreatePresets(ip BulkCreatePresetInput) ([]RoPreset, error
 			Label:     cur.Label,
 			Model:     cur.Model,
 			ClassId:   cur.Model.Class,
+			UserName:  ip.UserName,
 			CreatedAt: now,
 			UpdatedAt: now,
 		}

@@ -496,6 +496,14 @@ func (h roPresetHandler) BulkCreatePresets(w http.ResponseWriter, r *http.Reques
 	userId := r.Header.Get("userId")
 	d.UserId = userId
 
+	u, err := h.userService.FindUserById(userId)
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+
+	d.UserName = u.Name
+
 	res, err := h.roPresetService.BulkCreatePresets(d)
 	if err != nil {
 		WriteErr(w, err.Error())
@@ -564,6 +572,13 @@ func (h roPresetHandler) CreatePreset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d.UserId = r.Header.Get("userId")
+	u, err := h.userService.FindUserById(d.UserId)
+	if err != nil {
+		WriteErr(w, err.Error())
+		return
+	}
+
+	d.UserName = u.Name
 
 	res, err := h.roPresetService.CreatePreset(d)
 	if err != nil {

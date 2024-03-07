@@ -150,9 +150,10 @@ func (i *PresetModel) Validate() error {
 }
 
 type CreatePresetInput struct {
-	UserId string      `bson:"user_id" json:"userId"`
-	Label  string      `bson:"label" json:"label"`
-	Model  PresetModel `bson:"model" json:"model"`
+	UserId   string      `bson:"user_id" json:"userId"`
+	UserName string      `bson:"user_name" json:"userName"`
+	Label    string      `bson:"label" json:"label"`
+	Model    PresetModel `bson:"model" json:"model"`
 }
 
 func (i *CreatePresetInput) Validate() error {
@@ -191,6 +192,7 @@ type UpdateTagsInput struct {
 
 type BulkCreatePresetInput struct {
 	UserId   string `bson:"user_id" json:"userId"`
+	UserName string `bson:"user_name" json:"userName"`
 	BulkData []struct {
 		Label string      `bson:"label" json:"label"`
 		Model PresetModel `bson:"model" json:"model"`
