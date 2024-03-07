@@ -191,6 +191,12 @@ func connectMongoDB() (err error) {
 			},
 			Options: options.Index().SetUnique(true),
 		},
+		{
+			Keys: bson.M{
+				"name": 1,
+			},
+			Options: options.Index().SetUnique(true),
+		},
 	})
 	if err != nil {
 		panic(fmt.Errorf("index users: %w", err))
