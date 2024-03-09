@@ -120,6 +120,8 @@ func (s roPresetService) DeletePresetById(r CheckPresetOwnerRequest) (*int, erro
 		return nil, err
 	}
 
+	s.tagRepo.DeleteTagsByPresetId(r.Id)
+
 	return s.presetRepo.DeletePresetById(r.Id)
 }
 

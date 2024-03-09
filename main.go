@@ -33,7 +33,7 @@ var roTagCollection *mongo.Collection
 
 var appConfig configuration.AppConfig
 
-var limiter = rate.NewLimiter(1, 3)
+var limiter = rate.NewLimiter(1, 30)
 
 func main() {
 	initTimeZone()
