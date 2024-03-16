@@ -95,6 +95,7 @@ type TagWithLiked struct {
 type GetMyPresetsResponse struct {
 	Id          string         `json:"id"`
 	Label       string         `json:"label"`
+	ClassId     int            `json:"classId"`
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`
 	PublishName string         `json:"publishName"`
@@ -111,6 +112,7 @@ func (r *GetMyPresetsResponse) From(p service.PresetWithTags) {
 	r.PublishName = p.PublishName
 	r.IsPublished = p.IsPublished
 	r.PublishedAt = p.PublishedAt
+	r.ClassId = p.ClassId
 
 	tags := []TagWithLiked{}
 	for _, v := range p.Tags {
