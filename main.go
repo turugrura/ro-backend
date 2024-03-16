@@ -119,6 +119,7 @@ func main() {
 	methods := handlers.AllowedMethods([]string{http.MethodGet, http.MethodOptions, http.MethodPost, http.MethodDelete})
 	maxAge := handlers.MaxAge(86400)
 	h := handlers.CORS(headersOk, origins, methods, maxAge)(r.router)
+	h = handlers.CompressHandler(h)
 
 	appPort := appConfig.Port
 	log.Printf("listening on localhost:%v\n", appPort)
