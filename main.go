@@ -29,6 +29,7 @@ var userCollection *mongo.Collection
 var authDataCollection *mongo.Collection
 var refreshTokenCollection *mongo.Collection
 var roPresetCollection *mongo.Collection
+var roPresetForSummaryCollection *mongo.Collection
 var roTagCollection *mongo.Collection
 
 var appConfig configuration.AppConfig
@@ -58,6 +59,9 @@ func main() {
 	var roPresetService = service.NewRoPresetService(roPresetRepo, roTagRepo)
 	var roTagService = service.NewPresetTagService(roTagRepo, roPresetRepo, userRepo)
 
+	var roPresetSummaryRepo = repository.NewRoPresetRepository(roPresetForSummaryCollection)
+	var presetSummaryService = service.NewSummaryPresetService(roPresetSummaryRepo)
+
 	var authHandler = handler.NewAuthHandler(handler.AuthHandlerParam{
 		UserService:               userService,
 		AuthenticationDataService: authDataService,
@@ -69,6 +73,7 @@ func main() {
 		UserService:      userService,
 		PresetTagService: roTagService,
 	})
+	var presetSummaryHandler = handler.NewPresetSummaryHandler(presetSummaryService)
 	var helpCheckHandler = handler.NewHelpCheckHandler()
 
 	r := newAppRouter(mux.NewRouter())
@@ -82,6 +87,13 @@ func main() {
 
 	r.post("/login", authHandler.Login)
 	r.post("/refresh_token", authHandler.RefreshToken)
+
+	// ------
+	if appConfig.Environment == "dev" {
+		admin := r.subRouter("/admin")
+		admin.use(adminGuard)
+		admin.post("/preset_summary", presetSummaryHandler.GenerateSummary)
+	}
 
 	// ------
 	me := r.subRouter("/me")
@@ -218,6 +230,7 @@ func connectMongoDB() (err error) {
 	refreshTokenCollection = mongoDb.Collection("refresh_tokens")
 
 	roPresetCollection = mongoDb.Collection("ro_presets")
+	roPresetForSummaryCollection = mongoDb.Collection("prod_preset_67_04_25")
 	_, err = roPresetCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
 		{
 			Keys: bson.M{
