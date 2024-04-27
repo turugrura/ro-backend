@@ -103,6 +103,7 @@ func (s tokenService) signAccessToken(r AccessTokenRequest) (*string, error) {
 	now := time.Now()
 	claims := jwt.StandardClaims{
 		Id:        r.UserId,
+		Subject:   r.Role,
 		Issuer:    r.Name,
 		IssuedAt:  now.Unix(),
 		ExpiresAt: now.Add(time.Minute * tokenPeriod).Unix(),
