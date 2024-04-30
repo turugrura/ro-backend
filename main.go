@@ -10,6 +10,7 @@ import (
 
 	"ro-backend/configuration"
 	"ro-backend/handler"
+	_storeHandler "ro-backend/handler/store"
 	"ro-backend/repository"
 	"ro-backend/service"
 
@@ -31,6 +32,7 @@ var refreshTokenCollection *mongo.Collection
 var roPresetCollection *mongo.Collection
 var roPresetForSummaryCollection *mongo.Collection
 var roTagCollection *mongo.Collection
+var storeCollection *mongo.Collection
 
 var appConfig configuration.AppConfig
 
@@ -52,12 +54,14 @@ func main() {
 	var refreshTokenRepo = repository.NewRefreshTokenRepo(refreshTokenCollection)
 	var roPresetRepo = repository.NewRoPresetRepository(roPresetCollection)
 	var roTagRepo = repository.NewPresetTagRepository(roTagCollection)
+	var storeRepo = repository.NewStoreRepository(storeCollection)
 
 	var userService = service.NewUserService(userRepo, roPresetRepo)
 	var tokenService = service.NewTokenService(refreshTokenRepo)
 	var authDataService = service.NewAuthenticationDataService(authDataRepo)
 	var roPresetService = service.NewRoPresetService(roPresetRepo, roTagRepo)
 	var roTagService = service.NewPresetTagService(roTagRepo, roPresetRepo, userRepo)
+	var storeService = service.NewStoreService(storeRepo)
 
 	var roPresetSummaryRepo = repository.NewRoPresetRepository(roPresetForSummaryCollection)
 	var presetSummaryService = service.NewSummaryPresetService(roPresetSummaryRepo)
@@ -74,6 +78,7 @@ func main() {
 		PresetTagService: roTagService,
 	})
 	var presetSummaryHandler = handler.NewPresetSummaryHandler(presetSummaryService)
+	var storeHandler = _storeHandler.NewStoreHandler(storeService)
 	var helpCheckHandler = handler.NewHelpCheckHandler()
 
 	r := newAppRouter(mux.NewRouter())
@@ -119,6 +124,14 @@ func main() {
 	ro := r.subRouter("/ro_presets")
 	ro.use(userGuard)
 	ro.get("/class_by_tags/{classId}/{tag}", roPresetHandler.SearchPresetTags)
+
+	// ------
+	store := r.subRouter("/store")
+	store.use(userGuard)
+	store.post("", storeHandler.CreateStore)
+	store.get("/{storeId}", storeHandler.FindStoreById)
+	store.post("/{storeId}", storeHandler.UpdateStore)
+	store.post("/{storeId}/review", storeHandler.ReviewStore)
 
 	// ------
 	tag := r.subRouter("/preset_tags")
@@ -276,6 +289,25 @@ func connectMongoDB() (err error) {
 	})
 	if err != nil {
 		panic(fmt.Errorf("index preset_tags: %w", err))
+	}
+
+	storeCollection = mongoDb.Collection("store")
+	_, err = storeCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
+		{
+			Keys: bson.M{
+				"owner_id": 1,
+			},
+			Options: options.Index().SetUnique(true),
+		},
+		{
+			Keys: bson.M{
+				"name": 1,
+			},
+			Options: options.Index().SetUnique(true),
+		},
+	})
+	if err != nil {
+		panic(fmt.Errorf("index store: %w", err))
 	}
 
 	return
