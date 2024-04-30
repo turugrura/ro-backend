@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"ro-backend/appError"
+	"ro-backend/core"
 	"ro-backend/service"
 	"time"
 )
@@ -40,7 +41,7 @@ func (h userHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.FindUserById(userId)
 	if err != nil {
-		WriteErr(w, appError.ErrUnAuthentication)
+		core.WriteErr(w, appError.ErrUnAuthentication)
 		return
 	}
 
@@ -54,7 +55,7 @@ func (h userHandler) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h userHandler) PatchMyProfile(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +64,7 @@ func (h userHandler) PatchMyProfile(w http.ResponseWriter, r *http.Request) {
 	var d PatchMyProfileRequest
 	err := json.NewDecoder(r.Body).Decode(&d)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -72,7 +73,7 @@ func (h userHandler) PatchMyProfile(w http.ResponseWriter, r *http.Request) {
 		Name: d.Name,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -86,5 +87,5 @@ func (h userHandler) PatchMyProfile(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }

@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"ro-backend/configuration"
+	"ro-backend/core"
 )
 
 func NewHelpCheckHandler() HelpCheckHandler {
@@ -27,5 +28,5 @@ func (h helpCheckHandler) Ping(w http.ResponseWriter, r *http.Request) {
 		From:    configuration.Config.Environment,
 	}
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }

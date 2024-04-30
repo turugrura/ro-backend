@@ -1,3 +1,8 @@
 config_prod.yaml
 config.yaml
 backup-preset.json
+
+x_presetSummaryMap.json
+x_summaryClassSkillMap.json
+x_totalSelectedJobMap.json
+x.json

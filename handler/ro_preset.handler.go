@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"ro-backend/core"
 	"ro-backend/repository"
 	"ro-backend/service"
 	"strconv"
@@ -220,14 +221,14 @@ func (h roPresetHandler) AddTags(w http.ResponseWriter, r *http.Request) {
 		Tags:        d.Tags,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	response := GetMyPresetsResponse{}
 	response.From(*res)
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) RemoveTags(w http.ResponseWriter, r *http.Request) {
@@ -242,14 +243,14 @@ func (h roPresetHandler) RemoveTags(w http.ResponseWriter, r *http.Request) {
 		PresetId: presetId,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	response := GetMyPresetsResponse{}
 	response.From(*res)
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) BulkOperationTags(w http.ResponseWriter, r *http.Request) {
@@ -265,14 +266,14 @@ func (h roPresetHandler) BulkOperationTags(w http.ResponseWriter, r *http.Reques
 
 	res, err := h.presetTagService.BulkOperationTags(service.BulkOperationInput(req))
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	response := GetMyPresetsResponse{}
 	response.From(*res)
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) LikeTag(w http.ResponseWriter, r *http.Request) {
@@ -284,7 +285,7 @@ func (h roPresetHandler) LikeTag(w http.ResponseWriter, r *http.Request) {
 		UserId: userId,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -297,7 +298,7 @@ func (h roPresetHandler) LikeTag(w http.ResponseWriter, r *http.Request) {
 		Liked:     true,
 	}
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) UnLikeTag(w http.ResponseWriter, r *http.Request) {
@@ -309,7 +310,7 @@ func (h roPresetHandler) UnLikeTag(w http.ResponseWriter, r *http.Request) {
 		UserId: userId,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -322,26 +323,26 @@ func (h roPresetHandler) UnLikeTag(w http.ResponseWriter, r *http.Request) {
 		Liked:     false,
 	}
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) SearchPresetTags(w http.ResponseWriter, r *http.Request) {
 	classId, err := strconv.Atoi(mux.Vars(r)["classId"])
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	tag := mux.Vars(r)["tag"]
 	skip, err := strconv.Atoi(r.URL.Query().Get("skip"))
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	take, err := strconv.Atoi(r.URL.Query().Get("take"))
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 	if take == 0 {
@@ -358,7 +359,7 @@ func (h roPresetHandler) SearchPresetTags(w http.ResponseWriter, r *http.Request
 		Limit:  take,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -383,7 +384,7 @@ func (h roPresetHandler) SearchPresetTags(w http.ResponseWriter, r *http.Request
 		Take:       take,
 	}
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) UpdateMyPreset(w http.ResponseWriter, r *http.Request) {
@@ -395,7 +396,7 @@ func (h roPresetHandler) UpdateMyPreset(w http.ResponseWriter, r *http.Request) 
 
 	res, err := h.roPresetService.UpdatePreset(presetId, d)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -406,7 +407,7 @@ func (h roPresetHandler) UpdateMyPreset(w http.ResponseWriter, r *http.Request) 
 		UpdatedAt: res.UpdatedAt,
 	}
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) PublishMyPreset(w http.ResponseWriter, r *http.Request) {
@@ -421,7 +422,7 @@ func (h roPresetHandler) PublishMyPreset(w http.ResponseWriter, r *http.Request)
 		UserId:      userId,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -430,7 +431,7 @@ func (h roPresetHandler) PublishMyPreset(w http.ResponseWriter, r *http.Request)
 		RoPreset: *res,
 	})
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) UnPublishMyPreset(w http.ResponseWriter, r *http.Request) {
@@ -441,7 +442,7 @@ func (h roPresetHandler) UnPublishMyPreset(w http.ResponseWriter, r *http.Reques
 		UserId: userId,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -450,7 +451,7 @@ func (h roPresetHandler) UnPublishMyPreset(w http.ResponseWriter, r *http.Reques
 		RoPreset: *res,
 	})
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) DeleteById(w http.ResponseWriter, r *http.Request) {
@@ -462,11 +463,11 @@ func (h roPresetHandler) DeleteById(w http.ResponseWriter, r *http.Request) {
 		UserId: userId,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
-	WriteNoContent(w, nil)
+	core.WriteNoContent(w, nil)
 }
 
 func (h roPresetHandler) BulkCreatePresets(w http.ResponseWriter, r *http.Request) {
@@ -474,7 +475,7 @@ func (h roPresetHandler) BulkCreatePresets(w http.ResponseWriter, r *http.Reques
 	json.NewDecoder(r.Body).Decode(&d)
 
 	if len(d.BulkData) == 0 {
-		WriteOK(w, []repository.RoPreset{})
+		core.WriteOK(w, []repository.RoPreset{})
 		return
 	}
 
@@ -491,7 +492,7 @@ func (h roPresetHandler) BulkCreatePresets(w http.ResponseWriter, r *http.Reques
 		}
 	}
 	if len(errResponse) > 0 {
-		WriteErrObj(w, http.StatusBadRequest, errResponse)
+		core.WriteErrObj(w, http.StatusBadRequest, errResponse)
 		return
 	}
 
@@ -500,7 +501,7 @@ func (h roPresetHandler) BulkCreatePresets(w http.ResponseWriter, r *http.Reques
 
 	u, err := h.userService.FindUserById(userId)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -508,11 +509,11 @@ func (h roPresetHandler) BulkCreatePresets(w http.ResponseWriter, r *http.Reques
 
 	res, err := h.roPresetService.BulkCreatePresets(d)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
-	WriteCreated(w, res)
+	core.WriteCreated(w, res)
 }
 
 func (h roPresetHandler) GetMyPresets(w http.ResponseWriter, r *http.Request) {
@@ -520,13 +521,13 @@ func (h roPresetHandler) GetMyPresets(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.roPresetService.FindPresetsByUserId(userId, false)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	presetWithTags, err := h.presetTagService.AttachTags(userId, res)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -537,7 +538,7 @@ func (h roPresetHandler) GetMyPresets(w http.ResponseWriter, r *http.Request) {
 		response = append(response, r)
 	}
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) GetMyEntirePresets(w http.ResponseWriter, r *http.Request) {
@@ -545,13 +546,13 @@ func (h roPresetHandler) GetMyEntirePresets(w http.ResponseWriter, r *http.Reque
 
 	res, err := h.roPresetService.FindPresetsByUserId(userId, true)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	presetWithTags, err := h.presetTagService.AttachTags(userId, res)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -562,21 +563,21 @@ func (h roPresetHandler) GetMyEntirePresets(w http.ResponseWriter, r *http.Reque
 		response = append(response, r)
 	}
 
-	WriteOK(w, response)
+	core.WriteOK(w, response)
 }
 
 func (h roPresetHandler) CreatePreset(w http.ResponseWriter, r *http.Request) {
 	var d repository.CreatePresetInput
 	json.NewDecoder(r.Body).Decode(&d)
 	if err := d.Validate(); err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	d.UserId = r.Header.Get("userId")
 	u, err := h.userService.FindUserById(d.UserId)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -584,11 +585,11 @@ func (h roPresetHandler) CreatePreset(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.roPresetService.CreatePreset(d)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
-	WriteCreated(w, res)
+	core.WriteCreated(w, res)
 }
 
 func (h roPresetHandler) GetMyPresetById(w http.ResponseWriter, r *http.Request) {
@@ -600,9 +601,9 @@ func (h roPresetHandler) GetMyPresetById(w http.ResponseWriter, r *http.Request)
 		UserId: userId,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
-	WriteOK(w, res)
+	core.WriteOK(w, res)
 }

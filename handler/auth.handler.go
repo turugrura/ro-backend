@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"ro-backend/appError"
 	"ro-backend/configuration"
+	"ro-backend/core"
 	"ro-backend/repository"
 	"ro-backend/service"
 	"strconv"
@@ -57,7 +58,7 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var p LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -67,22 +68,22 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	authData, err := h.authenticationDataService.FindAuthenticationDataByCode(p.AuthorizationCode)
 	if err == mongo.ErrNoDocuments {
-		WriteErr(w, appError.ErrUnAuthentication)
+		core.WriteErr(w, appError.ErrUnAuthentication)
 		return
 	}
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	user, err := h.userService.FindUserByEmail(authData.Email)
 	if err != nil && err != mongo.ErrNoDocuments {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	if user == nil {
-		WriteErr(w, appError.ErrUserNotFound)
+		core.WriteErr(w, appError.ErrUserNotFound)
 		return
 	}
 
@@ -94,13 +95,13 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Role:      user.Role,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	err = h.authenticationDataService.DeleteAuthenticationDataByEmail(authData.Email)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -108,7 +109,7 @@ func (h authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		AccessToken:  generatedToken.AccessToken,
 		RefreshToken: generatedToken.RefreshToken,
 	}
-	WriteOK(w, loginResponse)
+	core.WriteOK(w, loginResponse)
 }
 
 func (h authHandler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -116,17 +117,17 @@ func (h authHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	err := h.tokenService.RevokeTokenByUserId(userId)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
-	WriteOK(w, nil)
+	core.WriteOK(w, nil)
 }
 
 func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := gothic.CompleteUserAuth(w, r)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -140,12 +141,12 @@ func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Reque
 	// fmt.Println(user)
 
 	if userInfo.RawData["verified_email"] == false {
-		WriteErr(w, appError.ErrUnverifiedEmail)
+		core.WriteErr(w, appError.ErrUnverifiedEmail)
 		return
 	}
 
 	if userInfo.Email == "" {
-		WriteErr(w, appError.ErrEmptyEmail)
+		core.WriteErr(w, appError.ErrEmptyEmail)
 		return
 	}
 
@@ -162,11 +163,11 @@ func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Reque
 		})
 
 		if err != nil {
-			WriteErr(w, err.Error())
+			core.WriteErr(w, err.Error())
 			return
 		}
 	} else if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -177,7 +178,7 @@ func (h authHandler) AuthenticationCallback(w http.ResponseWriter, r *http.Reque
 		Code:    code,
 	})
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -190,33 +191,33 @@ func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	var p RefreshTokenRequest
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	claims, err := h.tokenService.DecodeToken(p.RefreshToken)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	count, err := strconv.ParseUint(claims.Subject, 10, 32)
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
 	user, err := h.userService.FindUserById(claims.Issuer)
 	if err == mongo.ErrNoDocuments {
-		WriteErr(w, appError.ErrUnAuthentication)
+		core.WriteErr(w, appError.ErrUnAuthentication)
 		return
 	}
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 	if user.Status != repository.UserStatus.Active {
-		WriteErr(w, appError.ErrUserInactive)
+		core.WriteErr(w, appError.ErrUserInactive)
 		return
 	}
 
@@ -232,11 +233,11 @@ func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	if err == mongo.ErrNoDocuments {
-		WriteErr(w, appError.ErrUnAuthentication)
+		core.WriteErr(w, appError.ErrUnAuthentication)
 		return
 	}
 	if err != nil {
-		WriteErr(w, err.Error())
+		core.WriteErr(w, err.Error())
 		return
 	}
 
@@ -245,5 +246,5 @@ func (h authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: newToken.RefreshToken,
 	}
 
-	WriteOK(w, loginResponse)
+	core.WriteOK(w, loginResponse)
 }
