@@ -10,6 +10,7 @@ import (
 
 	"ro-backend/configuration"
 	"ro-backend/handler"
+	_productHandler "ro-backend/handler/product"
 	_storeHandler "ro-backend/handler/store"
 	"ro-backend/repository"
 	"ro-backend/service"
@@ -33,6 +34,7 @@ var roPresetCollection *mongo.Collection
 var roPresetForSummaryCollection *mongo.Collection
 var roTagCollection *mongo.Collection
 var storeCollection *mongo.Collection
+var productCollection *mongo.Collection
 
 var appConfig configuration.AppConfig
 
@@ -55,6 +57,7 @@ func main() {
 	var roPresetRepo = repository.NewRoPresetRepository(roPresetCollection)
 	var roTagRepo = repository.NewPresetTagRepository(roTagCollection)
 	var storeRepo = repository.NewStoreRepository(storeCollection)
+	var productRepo = repository.NewProductRepository(productCollection)
 
 	var userService = service.NewUserService(userRepo, roPresetRepo)
 	var tokenService = service.NewTokenService(refreshTokenRepo)
@@ -62,6 +65,7 @@ func main() {
 	var roPresetService = service.NewRoPresetService(roPresetRepo, roTagRepo)
 	var roTagService = service.NewPresetTagService(roTagRepo, roPresetRepo, userRepo)
 	var storeService = service.NewStoreService(storeRepo)
+	var productService = service.NewProductService(productRepo, storeRepo)
 
 	var roPresetSummaryRepo = repository.NewRoPresetRepository(roPresetForSummaryCollection)
 	var presetSummaryService = service.NewSummaryPresetService(roPresetSummaryRepo)
@@ -79,6 +83,8 @@ func main() {
 	})
 	var presetSummaryHandler = handler.NewPresetSummaryHandler(presetSummaryService)
 	var storeHandler = _storeHandler.NewStoreHandler(storeService)
+	var productHandler = _productHandler.NewProductHandler(productService)
+
 	var helpCheckHandler = handler.NewHelpCheckHandler()
 
 	r := newAppRouter(mux.NewRouter())
@@ -132,6 +138,14 @@ func main() {
 	store.get("/{storeId}", storeHandler.FindStoreById)
 	store.post("/me", storeHandler.UpdateStore)
 	store.post("/{storeId}/review", storeHandler.ReviewStore)
+
+	// ------ product
+	product := r.subRouter("/product")
+	product.use(userGuard)
+	product.post("/search", productHandler.SearchProductList)
+	product.post("/bulk_create", productHandler.CreateProductList)
+	product.post("/bulk_update", productHandler.UpdateProductList)
+	product.delete("/bulk_delete", productHandler.DeleteProductList)
 
 	// ------
 	tag := r.subRouter("/preset_tags")
@@ -308,6 +322,49 @@ func connectMongoDB() (err error) {
 	})
 	if err != nil {
 		panic(fmt.Errorf("index store: %w", err))
+	}
+
+	productCollection = mongoDb.Collection("product")
+	_, err = productCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "m", Value: 1},
+				{Key: "baht", Value: 1},
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "name", Value: 1},
+				{Key: "exp_date", Value: -1},
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "name", Value: 1},
+				{Key: "exp_date", Value: -1},
+				{Key: "is_published", Value: -1},
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "name", Value: 1},
+				{Key: "exp_date", Value: -1},
+				{Key: "is_published", Value: 1},
+				{Key: "type", Value: 1},
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "name", Value: 1},
+				{Key: "exp_date", Value: -1},
+				{Key: "is_published", Value: 1},
+				{Key: "type", Value: 1},
+				{Key: "sub_type", Value: 1},
+			},
+		},
+	})
+	if err != nil {
+		panic(fmt.Errorf("index product: %w", err))
 	}
 
 	return
