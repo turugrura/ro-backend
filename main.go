@@ -125,12 +125,12 @@ func main() {
 	ro.use(userGuard)
 	ro.get("/class_by_tags/{classId}/{tag}", roPresetHandler.SearchPresetTags)
 
-	// ------
+	// ------ store
 	store := r.subRouter("/store")
 	store.use(userGuard)
 	store.post("", storeHandler.CreateStore)
 	store.get("/{storeId}", storeHandler.FindStoreById)
-	store.post("/{storeId}", storeHandler.UpdateStore)
+	store.post("/me", storeHandler.UpdateStore)
 	store.post("/{storeId}/review", storeHandler.ReviewStore)
 
 	// ------
@@ -243,7 +243,7 @@ func connectMongoDB() (err error) {
 	refreshTokenCollection = mongoDb.Collection("refresh_tokens")
 
 	roPresetCollection = mongoDb.Collection("ro_presets")
-	roPresetForSummaryCollection = mongoDb.Collection("prod_preset_67_04_25")
+	// roPresetForSummaryCollection = mongoDb.Collection("prod_preset_67_05_16")
 	_, err = roPresetCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
 		{
 			Keys: bson.M{

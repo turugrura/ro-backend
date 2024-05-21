@@ -1,8 +1,6 @@
 package service
 
 import (
-	"fmt"
-	"ro-backend/appError"
 	"ro-backend/repository"
 )
 
@@ -12,19 +10,6 @@ func NewStoreService(repo repository.StoreRepository) StoreService {
 
 type storeService struct {
 	storeRepo repository.StoreRepository
-}
-
-func (s storeService) validateStoreOwner(userId, storeId string) (*repository.Store, error) {
-	store, err := s.storeRepo.FindStoreById(storeId)
-	if err != nil {
-		return nil, err
-	}
-
-	if store.OwnerId != userId {
-		return nil, fmt.Errorf(appError.ErrNotMyPreset)
-	}
-
-	return store, nil
 }
 
 func (s storeService) CreateStore(input repository.CreateStoreInput) (*repository.Store, error) {
@@ -39,11 +24,11 @@ func (s storeService) UpdateRatingStore(storeId string, input repository.UpdateR
 	return s.storeRepo.UpdateRatingStore(storeId, input)
 }
 
-func (s storeService) UpdateStore(userId, storeId string, input repository.PatchStoreInput) (*repository.Store, error) {
-	_, err := s.validateStoreOwner(userId, storeId)
+func (s storeService) UpdateStore(userId string, input repository.PatchStoreInput) (*repository.Store, error) {
+	store, err := s.storeRepo.FindStoreByOwnerId(userId)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.storeRepo.UpdateStore(storeId, input)
+	return s.storeRepo.UpdateStore(store.Id.Hex(), input)
 }

@@ -30,16 +30,36 @@ func (repo storeRepo) FindStoreById(id string) (*Store, error) {
 	}
 
 	return &store, nil
+
+}
+func (repo storeRepo) FindStoreByOwnerId(ownerId string) (*Store, error) {
+	objId, err := primitive.ObjectIDFromHex(ownerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var store Store
+	err = repo.collection.FindOne(context.Background(), bson.M{"owner_id": objId}).Decode(&store)
+	if err != nil {
+		return nil, err
+	}
+
+	return &store, nil
 }
 
 func (repo storeRepo) CreateStore(input CreateStoreInput) (*Store, error) {
-	newStore := input.toModelForCreate()
+	ownerId, err := primitive.ObjectIDFromHex(input.OwnerId)
+	if err != nil {
+		return nil, err
+	}
+
+	newStore := input.toModelForCreate(ownerId)
 	result, err := repo.collection.InsertOne(context.Background(), newStore)
 	if err != nil {
 		return nil, err
 	}
 
-	newStore.Id = result.InsertedID.(primitive.ObjectID).Hex()
+	newStore.Id = result.InsertedID.(primitive.ObjectID)
 
 	return &newStore, nil
 }
@@ -101,6 +121,8 @@ func (repo storeRepo) UpdateRatingStore(storeId string, input UpdateRatingInput)
 	if err != nil {
 		return nil, err
 	}
+
+	store.Review = map[string]Review{} // reduce network transfer cost
 
 	return store, nil
 }

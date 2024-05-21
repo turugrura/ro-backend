@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"ro-backend/core"
 	"ro-backend/repository"
-
-	"github.com/gorilla/mux"
 )
 
 type PatchStoreRequest struct {
@@ -27,12 +25,11 @@ func (r PatchStoreRequest) toPatchInput() repository.PatchStoreInput {
 
 func (s storeHandler) UpdateStore(w http.ResponseWriter, r *http.Request) {
 	userId := r.Header.Get("userId")
-	storeId := mux.Vars(r)["storeId"]
 
 	d := PatchStoreRequest{}
 	json.NewDecoder(r.Body).Decode(&d)
 
-	store, err := s.service.UpdateStore(userId, storeId, d.toPatchInput())
+	store, err := s.service.UpdateStore(userId, d.toPatchInput())
 	if err != nil {
 		core.WriteErr(w, err.Error())
 		return
