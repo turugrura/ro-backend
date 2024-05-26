@@ -12,4 +12,6 @@ const (
 	ErrCannotTagUnpublished        = "cannot tag unpublished preset"
 	ErrUserInactive                = "user is inactive"
 	ErrInvalidPresetInput          = "invalid input"
+	ErrStoreNotFound               = "store not found"
+	ErrBadInput                    = "bad Request"
 )

@@ -13,21 +13,25 @@ type UpdateProductRequest struct {
 	CreateProductRequest
 }
 
-func (r UpdateProductRequest) toUpdateInput() repository.PatchProductInput {
-	return repository.PatchProductInput{
-		Id:          r.Id,
-		ItemId:      r.ItemId,
-		BundleId:    r.BundleId,
-		Name:        r.Name,
-		Desc:        r.Desc,
-		EnchantIds:  r.EnchantIds,
-		Opts:        r.Opts,
-		Baht:        r.Baht,
-		M:           r.M,
-		Quantity:    r.Quantity,
-		Type:        r.Type,
-		SubType:     r.SubType,
-		IsPublished: r.IsPublished,
+func (r UpdateProductRequest) toUpdateInput() repository.RawProductInput {
+	return repository.RawProductInput{
+		RawId: r.Id,
+		PatchProductInput: repository.PatchProductInput{
+			ItemId:      r.ItemId,
+			BundleId:    r.BundleId,
+			Name:        r.Name,
+			Refine:      r.Refine,
+			CardIds:     r.CardIds,
+			Desc:        r.Desc,
+			EnchantIds:  r.EnchantIds,
+			Opts:        r.Opts,
+			Baht:        r.Baht,
+			Zeny:        r.Zeny,
+			Quantity:    r.Quantity,
+			Type:        r.Type,
+			SubType:     r.SubType,
+			IsPublished: r.IsPublished,
+		},
 	}
 }
 
@@ -38,7 +42,7 @@ func (p productHandler) UpdateProductList(w http.ResponseWriter, r *http.Request
 	var d []UpdateProductRequest
 	json.NewDecoder(r.Body).Decode(&d)
 
-	inputs := []repository.PatchProductInput{}
+	inputs := []repository.RawProductInput{}
 	for i, product := range d {
 		err := product.verify()
 		if err != nil {

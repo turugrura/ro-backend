@@ -20,28 +20,12 @@ type productRepo struct {
 }
 
 func (p productRepo) CreateProductList(inputs []Product) ([]Product, error) {
-	models := []interface{}{}
 	now := time.Now()
+	models := []interface{}{}
+
 	for i := 0; i < len(inputs); i++ {
 		var c = inputs[i]
-		var p = Product{
-			StoreId:     c.StoreId,
-			ItemId:      c.ItemId,
-			BundleId:    c.BundleId,
-			Name:        c.Name,
-			Desc:        c.Desc,
-			EnchantIds:  c.EnchantIds,
-			Opts:        c.Opts,
-			Baht:        c.Baht,
-			M:           c.M,
-			Quantity:    c.Quantity,
-			Type:        c.Type,
-			SubType:     c.SubType,
-			IsPublished: c.IsPublished,
-			ExpDate:     c.ExpDate,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
+		var p = c.toCreateProductModel(now)
 		models = append(models, p)
 	}
 
@@ -136,41 +120,51 @@ func (p productRepo) PartialSearchProductList(input PartialSearchProductsInput) 
 	}, nil
 }
 
-func (p productRepo) UpdateProductList(inputs []PatchProductInput) ([]Product, error) {
-	now := time.Now()
-
-	updateModels := []mongo.WriteModel{}
-	products := []Product{}
-	for i := 0; i < len(inputs); i++ {
-		var c = inputs[i]
-
-		objId, err := primitive.ObjectIDFromHex(c.Id)
+func (p productRepo) FindByIds(ids []string) ([]Product, error) {
+	objIds := []primitive.ObjectID{}
+	for _, id := range ids {
+		objId, err := primitive.ObjectIDFromHex(id)
 		if err != nil {
 			return nil, err
 		}
-		var p = Product{
-			Id:          objId,
-			ItemId:      c.ItemId,
-			BundleId:    c.BundleId,
-			Name:        c.Name,
-			Desc:        c.Desc,
-			EnchantIds:  c.EnchantIds,
-			Opts:        c.Opts,
-			Baht:        c.Baht,
-			M:           c.M,
-			Quantity:    c.Quantity,
-			Type:        c.Type,
-			SubType:     c.SubType,
-			IsPublished: c.IsPublished,
-			ExpDate:     c.ExpDate,
-			CreatedAt:   now,
-			UpdatedAt:   now,
+
+		objIds = append(objIds, objId)
+	}
+
+	cs, err := p.coll.Find(context.Background(), bson.M{
+		"_id": bson.M{
+			"$in": objIds,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	products := []Product{}
+	err = cs.All(context.Background(), &products)
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+
+func (p productRepo) UpdateProductList(inputs []RawProductInput) ([]Product, error) {
+	now := time.Now()
+
+	updateModels := []mongo.WriteModel{}
+	ids := []string{}
+	for i := 0; i < len(inputs); i++ {
+		var c = inputs[i]
+
+		objId, err := primitive.ObjectIDFromHex(c.RawId)
+		if err != nil {
+			return nil, err
 		}
-		products = append(products, p)
-		updateModels = append(updateModels, &mongo.UpdateOneModel{
-			Filter: bson.M{"_id": objId},
-			Update: p,
-		})
+		var p = c.toUpdateModel(objId, now)
+		ids = append(ids, c.RawId)
+		updateOpe := mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": objId}).SetUpdate(bson.M{"$set": p})
+		updateModels = append(updateModels, updateOpe)
 	}
 
 	_, err := p.coll.BulkWrite(context.Background(), updateModels)
@@ -178,7 +172,7 @@ func (p productRepo) UpdateProductList(inputs []PatchProductInput) ([]Product, e
 		return nil, err
 	}
 
-	return products, nil
+	return p.FindByIds(ids)
 }
 
 func (p productRepo) DeleteProductList(ids []string) error {

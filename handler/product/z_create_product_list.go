@@ -13,10 +13,12 @@ type CreateProductRequest struct {
 	BundleId    string   `json:"bundleId,omitempty"`
 	Name        string   `json:"name,omitempty"`
 	Desc        string   `json:"desc,omitempty"`
+	Refine      int      `json:"refine,omitempty"`
+	CardIds     []int    `json:"cardIds,omitempty"`
 	EnchantIds  []int    `json:"enchantIds,omitempty"`
 	Opts        []string `json:"opts,omitempty"`
 	Baht        float64  `json:"baht,omitempty"`
-	M           float64  `json:"m,omitempty"`
+	Zeny        float64  `json:"zeny,omitempty"`
 	Quantity    int      `json:"quantity,omitempty"`
 	Type        int      `json:"type,omitempty"`
 	SubType     int      `json:"subType,omitempty"`
@@ -29,10 +31,12 @@ func (r CreateProductRequest) toCreateInput() repository.Product {
 		BundleId:    r.BundleId,
 		Name:        r.Name,
 		Desc:        r.Desc,
+		Refine:      r.Refine,
+		CardIds:     r.CardIds,
 		EnchantIds:  r.EnchantIds,
 		Opts:        r.Opts,
 		Baht:        r.Baht,
-		M:           r.M,
+		Zeny:        r.Zeny,
 		Quantity:    r.Quantity,
 		Type:        r.Type,
 		SubType:     r.SubType,

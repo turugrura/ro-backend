@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"ro-backend/appError"
 	"ro-backend/repository"
 	"time"
 )
@@ -25,6 +26,27 @@ func (p productService) PartialSearchProductList(input repository.PartialSearchP
 	return p.pRepo.PartialSearchProductList(input)
 }
 
+func (p productService) GetMyProductList(userId, role string, skip, limit int) (*repository.PartialSearchProductsOutput, error) {
+	store, err := p.sRepo.FindStoreByOwnerId(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if store == nil {
+		return nil, fmt.Errorf(appError.ErrStoreNotFound)
+	}
+
+	storeId := store.Id.Hex()
+
+	return p.pRepo.PartialSearchProductList(repository.PartialSearchProductsInput{
+		ProductFiltering: repository.ProductFiltering{
+			StoreId: &storeId,
+		},
+		Skip:  skip,
+		Limit: limit,
+	})
+}
+
 func (p productService) CreateProductList(userId, role string, inputs []repository.Product) ([]repository.Product, error) {
 	store, err := p.sRepo.FindStoreByOwnerId(userId)
 	if err != nil {
@@ -32,7 +54,7 @@ func (p productService) CreateProductList(userId, role string, inputs []reposito
 	}
 
 	if store == nil {
-		return nil, fmt.Errorf("store not found, user must create store first")
+		return nil, fmt.Errorf("store not found")
 	}
 
 	exp := time.Now()
@@ -52,10 +74,38 @@ func (p productService) CreateProductList(userId, role string, inputs []reposito
 	return p.pRepo.CreateProductList(inputs)
 }
 
-func (p productService) UpdateProductList(userId, role string, inputs []repository.PatchProductInput) ([]repository.Product, error) {
+func (p productService) UpdateProductList(userId, role string, inputs []repository.RawProductInput) ([]repository.Product, error) {
+	ids := []string{}
+	for _, p := range inputs {
+		ids = append(ids, p.RawId)
+	}
+
+	err := p.validateProducts(ids)
+	if err != nil {
+		return nil, err
+	}
+
 	return p.pRepo.UpdateProductList(inputs)
 }
 
 func (p productService) DeleteProductList(userId string, ids []string) error {
+	err := p.validateProducts(ids)
+	if err != nil {
+		return err
+	}
+
 	return p.pRepo.DeleteProductList(ids)
+}
+
+func (p productService) validateProducts(ids []string) error {
+	myProducts, err := p.pRepo.FindByIds(ids)
+	if err != nil {
+		return err
+	}
+
+	if len(myProducts) != len(ids) {
+		return fmt.Errorf(appError.ErrBadInput)
+	}
+
+	return nil
 }
