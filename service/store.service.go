@@ -20,6 +20,10 @@ func (s storeService) FindStoreById(storeId string) (*repository.Store, error) {
 	return s.storeRepo.FindStoreById(storeId)
 }
 
+func (s storeService) FindMyStore(userId string) (*repository.Store, error) {
+	return s.storeRepo.FindStoreByOwnerId(userId)
+}
+
 func (s storeService) UpdateRatingStore(storeId string, input repository.UpdateRatingInput) (*repository.Store, error) {
 	return s.storeRepo.UpdateRatingStore(storeId, input)
 }

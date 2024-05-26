@@ -126,6 +126,13 @@ func main() {
 	me.post("/ro_presets/{presetId}/tags", roPresetHandler.BulkOperationTags)
 	me.delete("/ro_presets/{presetId}/tags/{tagId}", roPresetHandler.RemoveTags)
 
+	me.post("/store", storeHandler.UpdateStore)
+	me.get("/store", storeHandler.FindMyStore)
+	me.post("/products/search", productHandler.GetMyProductList)
+	me.post("/products/bulk_create", productHandler.CreateProductList)
+	me.post("/products/bulk_update", productHandler.UpdateProductList)
+	me.post("/products/bulk_delete", productHandler.DeleteProductList)
+
 	// ------
 	ro := r.subRouter("/ro_presets")
 	ro.use(userGuard)
@@ -136,16 +143,12 @@ func main() {
 	store.use(userGuard)
 	store.post("", storeHandler.CreateStore)
 	store.get("/{storeId}", storeHandler.FindStoreById)
-	store.post("/me", storeHandler.UpdateStore)
 	store.post("/{storeId}/review", storeHandler.ReviewStore)
 
 	// ------ product
 	product := r.subRouter("/product")
-	product.use(userGuard)
+	// product.use(userGuard)
 	product.post("/search", productHandler.SearchProductList)
-	product.post("/bulk_create", productHandler.CreateProductList)
-	product.post("/bulk_update", productHandler.UpdateProductList)
-	product.delete("/bulk_delete", productHandler.DeleteProductList)
 
 	// ------
 	tag := r.subRouter("/preset_tags")

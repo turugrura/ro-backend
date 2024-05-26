@@ -11,6 +11,7 @@ func NewStoreHandler(s service.StoreService) StoreHandler {
 
 type StoreHandler interface {
 	FindStoreById(w http.ResponseWriter, r *http.Request)
+	FindMyStore(w http.ResponseWriter, r *http.Request)
 	CreateStore(w http.ResponseWriter, r *http.Request)
 	UpdateStore(w http.ResponseWriter, r *http.Request)
 	ReviewStore(w http.ResponseWriter, r *http.Request)
