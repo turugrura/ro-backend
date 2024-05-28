@@ -131,6 +131,8 @@ func main() {
 	me.post("/products/search", productHandler.GetMyProductList)
 	me.post("/products/bulk_create", productHandler.CreateProductList)
 	me.post("/products/bulk_update", productHandler.UpdateProductList)
+	me.post("/products/bulk_patch", productHandler.PatchProductList)
+	me.post("/products/bulk_renew_exp_date", productHandler.RenewExpDateProductList)
 	me.post("/products/bulk_delete", productHandler.DeleteProductList)
 
 	// ------

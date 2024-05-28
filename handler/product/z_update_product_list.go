@@ -13,10 +13,10 @@ type UpdateProductRequest struct {
 	CreateProductRequest
 }
 
-func (r UpdateProductRequest) toUpdateInput() repository.RawProductInput {
-	return repository.RawProductInput{
+func (r UpdateProductRequest) toUpdateInput() repository.RawUpdateProductInput {
+	return repository.RawUpdateProductInput{
 		RawId: r.Id,
-		PatchProductInput: repository.PatchProductInput{
+		UpdateProductInput: repository.UpdateProductInput{
 			ItemId:      r.ItemId,
 			BundleId:    r.BundleId,
 			Name:        r.Name,
@@ -42,7 +42,7 @@ func (p productHandler) UpdateProductList(w http.ResponseWriter, r *http.Request
 	var d []UpdateProductRequest
 	json.NewDecoder(r.Body).Decode(&d)
 
-	inputs := []repository.RawProductInput{}
+	inputs := []repository.RawUpdateProductInput{}
 	for i, product := range d {
 		err := product.verify()
 		if err != nil {

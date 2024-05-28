@@ -14,6 +14,8 @@ type ProductHandler interface {
 	GetMyProductList(w http.ResponseWriter, r *http.Request)
 	CreateProductList(w http.ResponseWriter, r *http.Request)
 	UpdateProductList(w http.ResponseWriter, r *http.Request)
+	PatchProductList(w http.ResponseWriter, r *http.Request)
+	RenewExpDateProductList(w http.ResponseWriter, r *http.Request)
 	DeleteProductList(w http.ResponseWriter, r *http.Request)
 }
 

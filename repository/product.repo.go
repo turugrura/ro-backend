@@ -8,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func NewProductRepository(collection *mongo.Collection) ProductRepository {
@@ -91,33 +90,125 @@ func (p productRepo) PartialSearchProductList(input PartialSearchProductsInput) 
 			Key: "sub_type", Value: *input.SubType,
 		})
 	}
+	if input.ProductFiltering.ExpDate != nil {
+		filter = append(filter, bson.E{
+			Key: "exp_date", Value: bson.M{
+				"$gte": *input.ProductFiltering.ExpDate,
+			},
+		})
+	}
+	if input.ProductFiltering.IsPublished != nil {
+		filter = append(filter, bson.E{
+			Key: "is_published", Value: *input.ProductFiltering.IsPublished,
+		})
+	}
 
-	opts := options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)).SetSort(bson.D{
-		{Key: "m", Value: 1},
-		{Key: "baht", Value: 1},
+	cursor, err := p.coll.Aggregate(context.Background(), bson.A{
+		bson.D{
+			{Key: "$match", Value: filter},
+		},
+		bson.D{
+			{Key: "$lookup",
+				Value: bson.D{
+					{Key: "from", Value: "store"},
+					{Key: "localField", Value: "store_id"},
+					{Key: "foreignField", Value: "_id"},
+					{Key: "as", Value: "store"},
+				},
+			},
+		},
+		bson.D{
+			{Key: "$unwind",
+				Value: bson.D{
+					{Key: "path", Value: "$store"},
+					{Key: "preserveNullAndEmptyArrays", Value: true},
+				},
+			},
+		},
+		bson.D{
+			{Key: "$project",
+				Value: bson.D{
+					{Key: "_id", Value: 1},
+					{Key: "store_id", Value: 1},
+					{Key: "item_id", Value: 1},
+					{Key: "desc", Value: 1},
+					{Key: "refine", Value: 1},
+					{Key: "enchant_ids", Value: 1},
+					{Key: "card_ids", Value: 1},
+					{Key: "opts", Value: 1},
+					{Key: "baht", Value: 1},
+					{Key: "zeny", Value: 1},
+					{Key: "quantity", Value: 1},
+					{Key: "is_published", Value: 1},
+					{Key: "exp_date", Value: 1},
+					{Key: "store.name", Value: 1},
+					{Key: "store.description", Value: 1},
+					{Key: "store.rating", Value: 1},
+					{Key: "store.fb", Value: 1},
+					{Key: "store.character_name", Value: 1},
+				},
+			},
+		},
+		bson.D{
+			{Key: "$sort",
+				Value: bson.D{
+					{Key: "m", Value: 1},
+					{Key: "baht", Value: 1},
+				},
+			},
+		},
+		bson.D{
+			{Key: "$facet",
+				Value: bson.D{
+					{Key: "total_item",
+						Value: bson.A{
+							bson.D{{Key: `$count`, Value: "count"}},
+						},
+					},
+					{Key: "items",
+						Value: bson.A{
+							bson.D{{Key: "$skip", Value: skip}},
+							bson.D{{Key: "$limit", Value: limit}},
+						},
+					},
+				},
+			},
+		},
+		bson.D{{Key: "$unwind", Value: bson.D{{Key: "path", Value: "$total_item"}}}},
+		bson.D{
+			{Key: "$replaceWith",
+				Value: bson.D{
+					{Key: "total_item", Value: "$total_item.count"},
+					{Key: "items", Value: "$items"},
+				},
+			},
+		},
 	})
-	total, err := p.coll.CountDocuments(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
 
-	cursor, err := p.coll.Find(context.Background(), filter, opts)
+	result := []PartialSearchProductsOutput{}
+	err = cursor.All(context.Background(), &result)
 	if err != nil {
 		return nil, err
 	}
 
-	items := []Product{}
-	err = cursor.All(context.Background(), &items)
-	if err != nil {
-		return nil, err
+	if len(result) == 0 {
+		return &PartialSearchProductsOutput{
+			Items:     []SearchProductsOutput{},
+			TotalItem: 0,
+			Skip:      skip,
+			Limit:     limit,
+		}, nil
 	}
 
-	return &PartialSearchProductsOutput{
-		Items:     items,
-		TotalItem: int(total),
-		Skip:      skip,
-		Limit:     limit,
-	}, nil
+	response := result[0]
+
+	response.Skip = skip
+	response.Limit = limit
+
+	return &response, nil
 }
 
 func (p productRepo) FindByIds(ids []string) ([]Product, error) {
@@ -149,9 +240,8 @@ func (p productRepo) FindByIds(ids []string) ([]Product, error) {
 	return products, nil
 }
 
-func (p productRepo) UpdateProductList(inputs []RawProductInput) ([]Product, error) {
+func (p productRepo) UpdateProductList(storeId primitive.ObjectID, inputs []RawUpdateProductInput) ([]Product, error) {
 	now := time.Now()
-
 	updateModels := []mongo.WriteModel{}
 	ids := []string{}
 	for i := 0; i < len(inputs); i++ {
@@ -161,9 +251,10 @@ func (p productRepo) UpdateProductList(inputs []RawProductInput) ([]Product, err
 		if err != nil {
 			return nil, err
 		}
-		var p = c.toUpdateModel(objId, now)
+
+		var p = c.toUpdateModel(now)
 		ids = append(ids, c.RawId)
-		updateOpe := mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": objId}).SetUpdate(bson.M{"$set": p})
+		updateOpe := mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": objId, "store_id": storeId}).SetUpdate(bson.M{"$set": p})
 		updateModels = append(updateModels, updateOpe)
 	}
 
@@ -175,7 +266,32 @@ func (p productRepo) UpdateProductList(inputs []RawProductInput) ([]Product, err
 	return p.FindByIds(ids)
 }
 
-func (p productRepo) DeleteProductList(ids []string) error {
+func (p productRepo) PatchProductList(storeId primitive.ObjectID, inputs []RawPatchProductInput) ([]Product, error) {
+	now := time.Now()
+	updateModels := []mongo.WriteModel{}
+	ids := []string{}
+	for i := 0; i < len(inputs); i++ {
+		var c = inputs[i]
+
+		objId, err := primitive.ObjectIDFromHex(c.RawId)
+		if err != nil {
+			return nil, err
+		}
+		var p = c.toUpdateModel(now)
+		ids = append(ids, c.RawId)
+		updateOpe := mongo.NewUpdateOneModel().SetFilter(bson.M{"_id": objId, "store_id": storeId}).SetUpdate(bson.M{"$set": p})
+		updateModels = append(updateModels, updateOpe)
+	}
+
+	_, err := p.coll.BulkWrite(context.Background(), updateModels)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.FindByIds(ids)
+}
+
+func (p productRepo) DeleteProductList(storeId primitive.ObjectID, ids []string) error {
 	objIds := []primitive.ObjectID{}
 	for _, id := range ids {
 		objId, err := primitive.ObjectIDFromHex(id)
@@ -189,6 +305,7 @@ func (p productRepo) DeleteProductList(ids []string) error {
 		"_id": bson.M{
 			"$in": objIds,
 		},
+		"store_id": storeId,
 	})
 
 	return err

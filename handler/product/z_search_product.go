@@ -37,13 +37,6 @@ func (s SearchRequest) toSearchInput() repository.PartialSearchProductsInput {
 	}
 }
 
-type SearchPresetTagsResponse struct {
-	Items      []repository.Product `json:"items"`
-	TotalItems int                  `json:"totalItem"`
-	Skip       int                  `json:"skip"`
-	Take       int                  `json:"take"`
-}
-
 func (p productHandler) SearchProductList(w http.ResponseWriter, r *http.Request) {
 	var d SearchRequest
 	json.NewDecoder(r.Body).Decode(&d)
@@ -54,12 +47,5 @@ func (p productHandler) SearchProductList(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	response := SearchPresetTagsResponse{
-		Items:      result.Items,
-		TotalItems: result.TotalItem,
-		Skip:       result.Skip,
-		Take:       result.Limit,
-	}
-
-	core.WriteOK(w, response)
+	core.WriteOK(w, result)
 }

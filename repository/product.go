@@ -52,12 +52,14 @@ func (p Product) toCreateProductModel(createdTime time.Time) Product {
 }
 
 type ProductFiltering struct {
-	StoreId  *string
-	ItemId   *int
-	BundleId *string
-	Type     *int
-	SubType  *int
-	Name     *string
+	StoreId     *string
+	ItemId      *int
+	BundleId    *string
+	IsPublished *bool
+	Type        *int
+	SubType     *int
+	Name        *string
+	ExpDate     *time.Time
 }
 
 type ProductSorting struct {
@@ -73,14 +75,39 @@ type PartialSearchProductsInput struct {
 	Limit int
 }
 
-type PartialSearchProductsOutput struct {
-	Items     []Product
-	TotalItem int
-	Skip      int
-	Limit     int
+type ProductStore struct {
+	Name           string `bson:"name" json:"name"`
+	Description    string `bson:"description" json:"description"`
+	Rating         int    `bson:"rating" json:"rating"`
+	Fb             string `bson:"fb" json:"fb"`
+	Character_name string `bson:"character_name" json:"characterName"`
 }
 
-type PatchProductInput struct {
+type SearchProductsOutput struct {
+	Id          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	StoreId     primitive.ObjectID `bson:"store_id" json:"storeId"`
+	ItemId      int                `bson:"item_id" json:"itemId"`
+	Desc        string             `bson:"desc" json:"desc"`
+	Quantity    int                `bson:"quantity" json:"quantity"`
+	Refine      int                `bson:"refine" json:"refine"`
+	EnchantIds  []int              `bson:"enchant_ids" json:"enchantIds"`
+	CardIds     []int              `bson:"card_ids" json:"cardIds"`
+	Opts        []string           `bson:"opts" json:"opts"`
+	Baht        float64            `bson:"baht" json:"baht"`
+	Zeny        float64            `bson:"zeny" json:"zeny"`
+	ExpDate     time.Time          `bson:"exp_date" json:"expDate"`
+	IsPublished bool               `bson:"is_published" json:"isPublished"`
+	Store       ProductStore       `bson:"store" json:"store"`
+}
+
+type PartialSearchProductsOutput struct {
+	Items     []SearchProductsOutput `bson:"items" json:"items"`
+	TotalItem int                    `bson:"total_item" json:"totalItem"`
+	Skip      int                    `json:"skip"`
+	Limit     int                    `json:"limit"`
+}
+
+type UpdateProductInput struct {
 	Id          primitive.ObjectID `bson:"_id,omitempty"`
 	ItemId      int                `bson:"item_id,omitempty"`
 	BundleId    string             `bson:"bundle_id,omitempty"`
@@ -100,14 +127,13 @@ type PatchProductInput struct {
 	UpdatedAt   time.Time          `bson:"updated_at,omitempty"`
 }
 
-type RawProductInput struct {
+type RawUpdateProductInput struct {
 	RawId string
-	PatchProductInput
+	UpdateProductInput
 }
 
-func (p RawProductInput) toUpdateModel(objId primitive.ObjectID, updatedItem time.Time) PatchProductInput {
-	return PatchProductInput{
-		Id:          objId,
+func (p RawUpdateProductInput) toUpdateModel(updatedItem time.Time) UpdateProductInput {
+	return UpdateProductInput{
 		ItemId:      p.ItemId,
 		BundleId:    p.BundleId,
 		Name:        p.Name,
@@ -127,10 +153,34 @@ func (p RawProductInput) toUpdateModel(objId primitive.ObjectID, updatedItem tim
 	}
 }
 
+type PatchProductInput struct {
+	Zeny        *float64   `bson:"zeny,omitempty"`
+	Quantity    *int       `bson:"quantity,omitempty"`
+	IsPublished *bool      `bson:"is_published,omitempty"`
+	ExpDate     *time.Time `bson:"exp_date,omitempty"`
+	UpdatedAt   time.Time  `bson:"updated_at,omitempty"`
+}
+
+type RawPatchProductInput struct {
+	RawId string
+	PatchProductInput
+}
+
+func (p RawPatchProductInput) toUpdateModel(updatedItem time.Time) PatchProductInput {
+	return PatchProductInput{
+		Zeny:        p.Zeny,
+		Quantity:    p.Quantity,
+		IsPublished: p.IsPublished,
+		ExpDate:     p.ExpDate,
+		UpdatedAt:   updatedItem,
+	}
+}
+
 type ProductRepository interface {
 	PartialSearchProductList(input PartialSearchProductsInput) (*PartialSearchProductsOutput, error)
 	FindByIds(ids []string) ([]Product, error)
 	CreateProductList(inputs []Product) ([]Product, error)
-	UpdateProductList(inputs []RawProductInput) ([]Product, error)
-	DeleteProductList(ids []string) error
+	UpdateProductList(storeId primitive.ObjectID, inputs []RawUpdateProductInput) ([]Product, error)
+	PatchProductList(storeId primitive.ObjectID, inputs []RawPatchProductInput) ([]Product, error)
+	DeleteProductList(storeId primitive.ObjectID, ids []string) error
 }

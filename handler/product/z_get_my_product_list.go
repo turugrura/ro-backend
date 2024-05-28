@@ -24,12 +24,5 @@ func (p productHandler) GetMyProductList(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	response := SearchPresetTagsResponse{
-		Items:      result.Items,
-		TotalItems: result.TotalItem,
-		Skip:       result.Skip,
-		Take:       result.Limit,
-	}
-
-	core.WriteOK(w, response)
+	core.WriteOK(w, result)
 }
