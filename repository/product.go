@@ -63,9 +63,9 @@ type ProductFiltering struct {
 }
 
 type ProductSorting struct {
-	Baht    int
-	M       int
-	ExpDate time.Time
+	Baht    *int
+	M       *int
+	ExpDate *int
 }
 
 type PartialSearchProductsInput struct {

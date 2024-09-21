@@ -93,13 +93,16 @@ func (r roPresetRepo) PartialSearchPresets(i PartialSearchRoPresetInput) (*Parti
 		}
 	}
 
+	allowDiskUse := true
+
 	cursor, err := r.collection.Find(context.Background(), filter, &options.FindOptions{
 		Projection: opt.Projection,
 		Skip:       &skip,
 		Limit:      &take,
-		Sort: PresetListSorting{
-			UpdatedAt: -1,
+		Sort: bson.M{
+			"_id": 1,
 		},
+		AllowDiskUse: &allowDiskUse,
 	})
 	if err != nil {
 		return nil, err

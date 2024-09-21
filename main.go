@@ -262,7 +262,7 @@ func connectMongoDB() (err error) {
 	refreshTokenCollection = mongoDb.Collection("refresh_tokens")
 
 	roPresetCollection = mongoDb.Collection("ro_presets")
-	// roPresetForSummaryCollection = mongoDb.Collection("prod_preset_67_05_16")
+	roPresetForSummaryCollection = mongoDb.Collection("authorization_codes")
 	_, err = roPresetCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
 		{
 			Keys: bson.M{
@@ -333,38 +333,47 @@ func connectMongoDB() (err error) {
 	_, err = productCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
 		{
 			Keys: bson.D{
+				{Key: "exp_date", Value: 1},
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "baht", Value: 1},
+			},
+		},
+		{
+			Keys: bson.D{
+				{Key: "m", Value: 1},
+			},
+		},
+		{
+			Keys: bson.D{
 				{Key: "m", Value: 1},
 				{Key: "baht", Value: 1},
 			},
 		},
 		{
 			Keys: bson.D{
-				{Key: "name", Value: 1},
-				{Key: "exp_date", Value: -1},
+				{Key: "m", Value: 1},
+				{Key: "baht", Value: 1},
+				{Key: "exp_date", Value: 1},
 			},
 		},
 		{
 			Keys: bson.D{
-				{Key: "name", Value: 1},
-				{Key: "exp_date", Value: -1},
+				{Key: "m", Value: 1},
+				{Key: "baht", Value: 1},
+				{Key: "exp_date", Value: 1},
 				{Key: "is_published", Value: -1},
 			},
 		},
 		{
 			Keys: bson.D{
+				{Key: "m", Value: 1},
+				{Key: "baht", Value: 1},
+				{Key: "exp_date", Value: 1},
+				{Key: "is_published", Value: -1},
 				{Key: "name", Value: 1},
-				{Key: "exp_date", Value: -1},
-				{Key: "is_published", Value: 1},
-				{Key: "type", Value: 1},
-			},
-		},
-		{
-			Keys: bson.D{
-				{Key: "name", Value: 1},
-				{Key: "exp_date", Value: -1},
-				{Key: "is_published", Value: 1},
-				{Key: "type", Value: 1},
-				{Key: "sub_type", Value: 1},
 			},
 		},
 	})
