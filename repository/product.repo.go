@@ -59,7 +59,7 @@ func (p productRepo) PartialSearchProductList(input PartialSearchProductsInput) 
 
 	if input.Name != nil {
 		filter = append(filter, bson.E{Key: "name", Value: primitive.Regex{
-			Pattern: fmt.Sprintf("^%v", *input.Name),
+			Pattern: fmt.Sprintf(".*%v.*", *input.Name),
 			Options: "i",
 		}})
 	}
@@ -100,6 +100,25 @@ func (p productRepo) PartialSearchProductList(input PartialSearchProductsInput) 
 	if input.ProductFiltering.IsPublished != nil {
 		filter = append(filter, bson.E{
 			Key: "is_published", Value: *input.ProductFiltering.IsPublished,
+		})
+	}
+
+	sorting := bson.D{}
+	if input.ProductSorting.M != nil {
+		sorting = append(sorting, primitive.E{
+			Key: "m", Value: *input.ProductSorting.M,
+		})
+	}
+
+	if input.ProductSorting.Baht != nil {
+		sorting = append(sorting, primitive.E{
+			Key: "baht", Value: *input.ProductSorting.Baht,
+		})
+	}
+
+	if input.ProductSorting.ExpDate != nil {
+		sorting = append(sorting, primitive.E{
+			Key: "exp_date", Value: *input.ProductSorting.ExpDate,
 		})
 	}
 
@@ -150,12 +169,7 @@ func (p productRepo) PartialSearchProductList(input PartialSearchProductsInput) 
 			},
 		},
 		bson.D{
-			{Key: "$sort",
-				Value: bson.D{
-					{Key: "m", Value: 1},
-					{Key: "baht", Value: 1},
-				},
-			},
+			{Key: "$sort", Value: sorting},
 		},
 		bson.D{
 			{Key: "$facet",

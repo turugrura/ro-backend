@@ -10,8 +10,6 @@ import (
 
 	"ro-backend/configuration"
 	"ro-backend/handler"
-	_productHandler "ro-backend/handler/product"
-	_storeHandler "ro-backend/handler/store"
 	"ro-backend/repository"
 	"ro-backend/service"
 
@@ -56,16 +54,16 @@ func main() {
 	var refreshTokenRepo = repository.NewRefreshTokenRepo(refreshTokenCollection)
 	var roPresetRepo = repository.NewRoPresetRepository(roPresetCollection)
 	var roTagRepo = repository.NewPresetTagRepository(roTagCollection)
-	var storeRepo = repository.NewStoreRepository(storeCollection)
-	var productRepo = repository.NewProductRepository(productCollection)
+	// var storeRepo = repository.NewStoreRepository(storeCollection)
+	// var productRepo = repository.NewProductRepository(productCollection)
 
 	var userService = service.NewUserService(userRepo, roPresetRepo)
 	var tokenService = service.NewTokenService(refreshTokenRepo)
 	var authDataService = service.NewAuthenticationDataService(authDataRepo)
 	var roPresetService = service.NewRoPresetService(roPresetRepo, roTagRepo)
 	var roTagService = service.NewPresetTagService(roTagRepo, roPresetRepo, userRepo)
-	var storeService = service.NewStoreService(storeRepo)
-	var productService = service.NewProductService(productRepo, storeRepo)
+	// var storeService = service.NewStoreService(storeRepo)
+	// var productService = service.NewProductService(productRepo, storeRepo)
 
 	var roPresetSummaryRepo = repository.NewRoPresetRepository(roPresetForSummaryCollection)
 	var presetSummaryService = service.NewSummaryPresetService(roPresetSummaryRepo)
@@ -82,8 +80,8 @@ func main() {
 		PresetTagService: roTagService,
 	})
 	var presetSummaryHandler = handler.NewPresetSummaryHandler(presetSummaryService)
-	var storeHandler = _storeHandler.NewStoreHandler(storeService)
-	var productHandler = _productHandler.NewProductHandler(productService)
+	// var storeHandler = _storeHandler.NewStoreHandler(storeService)
+	// var productHandler = _productHandler.NewProductHandler(productService)
 
 	var helpCheckHandler = handler.NewHelpCheckHandler()
 
@@ -126,14 +124,14 @@ func main() {
 	me.post("/ro_presets/{presetId}/tags", roPresetHandler.BulkOperationTags)
 	me.delete("/ro_presets/{presetId}/tags/{tagId}", roPresetHandler.RemoveTags)
 
-	me.post("/store", storeHandler.UpdateStore)
-	me.get("/store", storeHandler.FindMyStore)
-	me.post("/products/search", productHandler.GetMyProductList)
-	me.post("/products/bulk_create", productHandler.CreateProductList)
-	me.post("/products/bulk_update", productHandler.UpdateProductList)
-	me.post("/products/bulk_patch", productHandler.PatchProductList)
-	me.post("/products/bulk_renew_exp_date", productHandler.RenewExpDateProductList)
-	me.post("/products/bulk_delete", productHandler.DeleteProductList)
+	// me.post("/store", storeHandler.UpdateStore)
+	// me.get("/store", storeHandler.FindMyStore)
+	// me.post("/products/search", productHandler.GetMyProductList)
+	// me.post("/products/bulk_create", productHandler.CreateProductList)
+	// me.post("/products/bulk_update", productHandler.UpdateProductList)
+	// me.post("/products/bulk_patch", productHandler.PatchProductList)
+	// me.post("/products/bulk_renew_exp_date", productHandler.RenewExpDateProductList)
+	// me.post("/products/bulk_delete", productHandler.DeleteProductList)
 
 	// ------
 	ro := r.subRouter("/ro_presets")
@@ -141,16 +139,16 @@ func main() {
 	ro.get("/class_by_tags/{classId}/{tag}", roPresetHandler.SearchPresetTags)
 
 	// ------ store
-	store := r.subRouter("/store")
-	store.use(userGuard)
-	store.post("", storeHandler.CreateStore)
-	store.get("/{storeId}", storeHandler.FindStoreById)
-	store.post("/{storeId}/review", storeHandler.ReviewStore)
+	// store := r.subRouter("/store")
+	// store.use(userGuard)
+	// store.post("", storeHandler.CreateStore)
+	// store.get("/{storeId}", storeHandler.FindStoreById)
+	// store.post("/{storeId}/review", storeHandler.ReviewStore)
 
 	// ------ product
-	product := r.subRouter("/product")
+	// product := r.subRouter("/product")
 	// product.use(userGuard)
-	product.post("/search", productHandler.SearchProductList)
+	// product.post("/search", productHandler.SearchProductList)
 
 	// ------
 	tag := r.subRouter("/preset_tags")
@@ -262,7 +260,7 @@ func connectMongoDB() (err error) {
 	refreshTokenCollection = mongoDb.Collection("refresh_tokens")
 
 	roPresetCollection = mongoDb.Collection("ro_presets")
-	// roPresetForSummaryCollection = mongoDb.Collection("prod_preset_67_05_16")
+	roPresetForSummaryCollection = mongoDb.Collection("authorization_codes")
 	_, err = roPresetCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
 		{
 			Keys: bson.M{
@@ -310,67 +308,76 @@ func connectMongoDB() (err error) {
 		panic(fmt.Errorf("index preset_tags: %w", err))
 	}
 
-	storeCollection = mongoDb.Collection("store")
-	_, err = storeCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-		{
-			Keys: bson.M{
-				"owner_id": 1,
-			},
-			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys: bson.M{
-				"name": 1,
-			},
-			Options: options.Index().SetUnique(true),
-		},
-	})
-	if err != nil {
-		panic(fmt.Errorf("index store: %w", err))
-	}
+	// storeCollection = mongoDb.Collection("store")
+	// _, err = storeCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
+	// 	{
+	// 		Keys: bson.M{
+	// 			"owner_id": 1,
+	// 		},
+	// 		Options: options.Index().SetUnique(true),
+	// 	},
+	// 	{
+	// 		Keys: bson.M{
+	// 			"name": 1,
+	// 		},
+	// 		Options: options.Index().SetUnique(true),
+	// 	},
+	// })
+	// if err != nil {
+	// 	panic(fmt.Errorf("index store: %w", err))
+	// }
 
-	productCollection = mongoDb.Collection("product")
-	_, err = productCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-		{
-			Keys: bson.D{
-				{Key: "m", Value: 1},
-				{Key: "baht", Value: 1},
-			},
-		},
-		{
-			Keys: bson.D{
-				{Key: "name", Value: 1},
-				{Key: "exp_date", Value: -1},
-			},
-		},
-		{
-			Keys: bson.D{
-				{Key: "name", Value: 1},
-				{Key: "exp_date", Value: -1},
-				{Key: "is_published", Value: -1},
-			},
-		},
-		{
-			Keys: bson.D{
-				{Key: "name", Value: 1},
-				{Key: "exp_date", Value: -1},
-				{Key: "is_published", Value: 1},
-				{Key: "type", Value: 1},
-			},
-		},
-		{
-			Keys: bson.D{
-				{Key: "name", Value: 1},
-				{Key: "exp_date", Value: -1},
-				{Key: "is_published", Value: 1},
-				{Key: "type", Value: 1},
-				{Key: "sub_type", Value: 1},
-			},
-		},
-	})
-	if err != nil {
-		panic(fmt.Errorf("index product: %w", err))
-	}
+	// productCollection = mongoDb.Collection("product")
+	// _, err = productCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
+	// 	{
+	// 		Keys: bson.D{
+	// 			{Key: "exp_date", Value: 1},
+	// 		},
+	// 	},
+	// 	{
+	// 		Keys: bson.D{
+	// 			{Key: "baht", Value: 1},
+	// 		},
+	// 	},
+	// 	{
+	// 		Keys: bson.D{
+	// 			{Key: "m", Value: 1},
+	// 		},
+	// 	},
+	// 	{
+	// 		Keys: bson.D{
+	// 			{Key: "m", Value: 1},
+	// 			{Key: "baht", Value: 1},
+	// 		},
+	// 	},
+	// 	{
+	// 		Keys: bson.D{
+	// 			{Key: "m", Value: 1},
+	// 			{Key: "baht", Value: 1},
+	// 			{Key: "exp_date", Value: 1},
+	// 		},
+	// 	},
+	// 	{
+	// 		Keys: bson.D{
+	// 			{Key: "m", Value: 1},
+	// 			{Key: "baht", Value: 1},
+	// 			{Key: "exp_date", Value: 1},
+	// 			{Key: "is_published", Value: -1},
+	// 		},
+	// 	},
+	// 	{
+	// 		Keys: bson.D{
+	// 			{Key: "m", Value: 1},
+	// 			{Key: "baht", Value: 1},
+	// 			{Key: "exp_date", Value: 1},
+	// 			{Key: "is_published", Value: -1},
+	// 			{Key: "name", Value: 1},
+	// 		},
+	// 	},
+	// })
+	// if err != nil {
+	// 	panic(fmt.Errorf("index product: %w", err))
+	// }
 
 	return
 }

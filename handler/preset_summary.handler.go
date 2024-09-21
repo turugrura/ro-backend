@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"ro-backend/appError"
 	"ro-backend/core"
 	"ro-backend/service"
 )
@@ -29,7 +28,7 @@ func (h presetSummaryHandler) GenerateSummary(w http.ResponseWriter, r *http.Req
 
 	_, err := h.s.GenerateSummary()
 	if err != nil {
-		core.WriteErr(w, appError.ErrUnAuthentication)
+		core.WriteErr(w, err.Error())
 		return
 	}
 

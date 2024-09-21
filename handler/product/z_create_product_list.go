@@ -49,13 +49,13 @@ func (r CreateProductRequest) verify() error {
 		return fmt.Errorf("itemId should be > 0")
 	}
 	if r.Name == "" {
-		return fmt.Errorf("name is empty")
+		return fmt.Errorf("name should not be empty")
 	}
 	if r.Type == 0 {
 		return fmt.Errorf("type should be > 0")
 	}
-	if r.SubType == 0 {
-		return fmt.Errorf("subType should be > 0")
+	if r.SubType < 0 {
+		return fmt.Errorf("subType should be >= 0")
 	}
 
 	return nil

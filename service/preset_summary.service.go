@@ -33,7 +33,7 @@ type ItemSummary struct {
 
 func (s summaryPresetService) GenerateSummary() (*PresetSummary, error) {
 	skip := int(0)
-	take := int(500)
+	take := int(1000)
 	res, err := s.pRepo.PartialSearchPresets(repository.PartialSearchRoPresetInput{
 		InCludeModel: true,
 		Skip:         &skip,
@@ -64,7 +64,7 @@ func (s summaryPresetService) GenerateSummary() (*PresetSummary, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("Round %v passed\n", i)
+		fmt.Printf("Round %v - %v passed\n", i, skip)
 
 		setSummary(&userDataMap, res.Items, &presetSummaryMap)
 	}

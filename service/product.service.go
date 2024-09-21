@@ -27,6 +27,15 @@ func (p productService) PartialSearchProductList(input repository.PartialSearchP
 	published := true
 	input.IsPublished = &published
 
+	closelyExpired := 1
+	input.ProductSorting.ExpDate = &closelyExpired
+
+	lowestM := 1
+	input.ProductSorting.M = &lowestM
+
+	lowestZeny := 1
+	input.ProductSorting.Baht = &lowestZeny
+
 	return p.pRepo.PartialSearchProductList(input)
 }
 
@@ -42,9 +51,14 @@ func (p productService) GetMyProductList(userId, role string, skip, limit int) (
 
 	storeId := store.Id.Hex()
 
+	closelyExpired := 1
+
 	return p.pRepo.PartialSearchProductList(repository.PartialSearchProductsInput{
 		ProductFiltering: repository.ProductFiltering{
 			StoreId: &storeId,
+		},
+		ProductSorting: repository.ProductSorting{
+			ExpDate: &closelyExpired,
 		},
 		Skip:  skip,
 		Limit: limit,
