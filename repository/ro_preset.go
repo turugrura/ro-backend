@@ -121,9 +121,10 @@ type PresetModel struct {
 
 	Pet int `bson:"pet" json:"pet,omitempty"`
 
-	CostumeUpper  int `bson:"costumeUpper" json:"costumeUpper,omitempty"`
-	CostumeMiddle int `bson:"costumeMiddle" json:"costumeMiddle,omitempty"`
-	CostumeLower  int `bson:"costumeLower" json:"costumeLower,omitempty"`
+	CostumeUpper   int `bson:"costumeUpper" json:"costumeUpper,omitempty"`
+	CostumeMiddle  int `bson:"costumeMiddle" json:"costumeMiddle,omitempty"`
+	CostumeLower   int `bson:"costumeLower" json:"costumeLower,omitempty"`
+	CostumeGarment int `bson:"costumeGarment" json:"costumeGarment,omitempty"`
 
 	CostumeEnchantUpper    int `bson:"costumeEnchantUpper" json:"costumeEnchantUpper,omitempty"`
 	CostumeEnchantMiddle   int `bson:"costumeEnchantMiddle" json:"costumeEnchantMiddle,omitempty"`
