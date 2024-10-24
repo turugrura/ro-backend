@@ -1,13 +1,13 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
 
 	"log"
 
+	"ro-backend/api_router"
 	"ro-backend/configuration"
 	"ro-backend/handler"
 	"ro-backend/repository"
@@ -19,20 +19,8 @@ import (
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/google"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/time/rate"
 )
-
-var userCollection *mongo.Collection
-var authDataCollection *mongo.Collection
-var refreshTokenCollection *mongo.Collection
-var roPresetCollection *mongo.Collection
-var roPresetForSummaryCollection *mongo.Collection
-var roTagCollection *mongo.Collection
-var storeCollection *mongo.Collection
-var productCollection *mongo.Collection
 
 var appConfig configuration.AppConfig
 
@@ -85,82 +73,83 @@ func main() {
 
 	var helpCheckHandler = handler.NewHelpCheckHandler()
 
-	r := newAppRouter(mux.NewRouter())
-	r.use(jsonResponseMiddleware)
-	r.use(rateLimitMiddleware)
+	r := api_router.NewAppRouter(mux.NewRouter())
+	r.Use(jsonResponseMiddleware)
+	r.Use(rateLimitMiddleware)
 
-	r.get("/ping", helpCheckHandler.Ping)
+	r.Get("/ping", helpCheckHandler.Ping)
 
-	r.get("/auth/{provider}/callback", authHandler.AuthenticationCallback)
-	r.get("/auth/{provider}", gothic.BeginAuthHandler)
+	r.Get("/auth/{provider}/callback", authHandler.AuthenticationCallback)
+	r.Get("/auth/{provider}", gothic.BeginAuthHandler)
 
-	r.post("/login", authHandler.Login)
-	r.post("/refresh_token", authHandler.RefreshToken)
+	r.Post("/login", authHandler.Login)
+	r.Post("/refresh_token", authHandler.RefreshToken)
 
 	// ------
+	admin := r.SubRouter("/admin")
+	admin.Use(adminGuard)
 	if appConfig.Environment == "dev" {
-		admin := r.subRouter("/admin")
-		admin.use(adminGuard)
-		admin.post("/preset_summary", presetSummaryHandler.GenerateSummary)
+		admin.Post("/preset_summary", presetSummaryHandler.GenerateSummary)
 	}
+	api_router.SetupRouterFriend(friendTranslatorCollection, admin)
 
 	// ------
-	me := r.subRouter("/me")
-	me.use(userGuard)
-	me.get("", userHandler.GetMyProfile)
-	me.post("", userHandler.PatchMyProfile)
-	me.post("/logout", authHandler.Logout)
-	me.post("/bulk_ro_presets", roPresetHandler.BulkCreatePresets)
-	me.get("/ro_entire_presets", roPresetHandler.GetMyEntirePresets)
-	me.get("/ro_presets", roPresetHandler.GetMyPresets)
-	me.post("/ro_presets", roPresetHandler.CreatePreset)
+	me := r.SubRouter("/me")
+	me.Use(userGuard)
+	me.Get("", userHandler.GetMyProfile)
+	me.Post("", userHandler.PatchMyProfile)
+	me.Post("/logout", authHandler.Logout)
+	me.Post("/bulk_ro_presets", roPresetHandler.BulkCreatePresets)
+	me.Get("/ro_entire_presets", roPresetHandler.GetMyEntirePresets)
+	me.Get("/ro_presets", roPresetHandler.GetMyPresets)
+	me.Post("/ro_presets", roPresetHandler.CreatePreset)
 
-	me.get("/ro_presets/{presetId}", roPresetHandler.GetMyPresetById)
-	me.post("/ro_presets/{presetId}", roPresetHandler.UpdateMyPreset)
-	me.delete("/ro_presets/{presetId}", roPresetHandler.DeleteById)
-	me.post("/ro_presets/{presetId}/publish", roPresetHandler.PublishMyPreset)
-	me.delete("/ro_presets/{presetId}/publish", roPresetHandler.UnPublishMyPreset)
+	me.Get("/ro_presets/{presetId}", roPresetHandler.GetMyPresetById)
+	me.Post("/ro_presets/{presetId}", roPresetHandler.UpdateMyPreset)
+	me.Delete("/ro_presets/{presetId}", roPresetHandler.DeleteById)
+	me.Post("/ro_presets/{presetId}/publish", roPresetHandler.PublishMyPreset)
+	me.Delete("/ro_presets/{presetId}/publish", roPresetHandler.UnPublishMyPreset)
 
-	me.post("/ro_presets/{presetId}/tags", roPresetHandler.BulkOperationTags)
-	me.delete("/ro_presets/{presetId}/tags/{tagId}", roPresetHandler.RemoveTags)
+	me.Post("/ro_presets/{presetId}/tags", roPresetHandler.BulkOperationTags)
+	me.Delete("/ro_presets/{presetId}/tags/{tagId}", roPresetHandler.RemoveTags)
 
-	// me.post("/store", storeHandler.UpdateStore)
-	// me.get("/store", storeHandler.FindMyStore)
-	// me.post("/products/search", productHandler.GetMyProductList)
-	// me.post("/products/bulk_create", productHandler.CreateProductList)
-	// me.post("/products/bulk_update", productHandler.UpdateProductList)
-	// me.post("/products/bulk_patch", productHandler.PatchProductList)
-	// me.post("/products/bulk_renew_exp_date", productHandler.RenewExpDateProductList)
-	// me.post("/products/bulk_delete", productHandler.DeleteProductList)
+	// me.Post("/store", storeHandler.UpdateStore)
+	// me.Get("/store", storeHandler.FindMyStore)
+	// me.Post("/products/search", productHandler.GetMyProductList)
+	// me.Post("/products/bulk_create", productHandler.CreateProductList)
+	// me.Post("/products/bulk_update", productHandler.UpdateProductList)
+	// me.Post("/products/bulk_patch", productHandler.PatchProductList)
+	// me.Post("/products/bulk_renew_exp_date", productHandler.RenewExpDateProductList)
+	// me.Post("/products/bulk_delete", productHandler.DeleteProductList)
 
 	// ------
-	ro := r.subRouter("/ro_presets")
-	ro.use(userGuard)
-	ro.get("/class_by_tags/{classId}/{tag}", roPresetHandler.SearchPresetTags)
+	ro := r.SubRouter("/ro_presets")
+	ro.Use(userGuard)
+	ro.Get("/class_by_tags/{classId}/{tag}", roPresetHandler.SearchPresetTags)
 
 	// ------ store
-	// store := r.subRouter("/store")
+	// store := r.SubRouter("/store")
 	// store.use(userGuard)
-	// store.post("", storeHandler.CreateStore)
-	// store.get("/{storeId}", storeHandler.FindStoreById)
-	// store.post("/{storeId}/review", storeHandler.ReviewStore)
+	// store.Post("", storeHandler.CreateStore)
+	// store.Get("/{storeId}", storeHandler.FindStoreById)
+	// store.Post("/{storeId}/review", storeHandler.ReviewStore)
 
 	// ------ product
-	// product := r.subRouter("/product")
+	// product := r.SubRouter("/product")
 	// product.use(userGuard)
-	// product.post("/search", productHandler.SearchProductList)
+	// product.Post("/search", productHandler.SearchProductList)
 
 	// ------
-	tag := r.subRouter("/preset_tags")
-	tag.use(userGuard)
-	tag.post("/{tagId}/like", roPresetHandler.LikeTag)
-	tag.delete("/{tagId}/like", roPresetHandler.UnLikeTag)
+	tag := r.SubRouter("/preset_tags")
+	tag.Use(userGuard)
+	tag.Post("/{tagId}/like", roPresetHandler.LikeTag)
+	tag.Delete("/{tagId}/like", roPresetHandler.UnLikeTag)
 
 	headersOk := handlers.AllowedHeaders([]string{"authorization", "Content-Type"})
 	origins := handlers.AllowedOrigins(appConfig.Security.AllowedOrigins)
 	methods := handlers.AllowedMethods([]string{http.MethodGet, http.MethodOptions, http.MethodPost, http.MethodDelete})
 	maxAge := handlers.MaxAge(86400)
-	h := handlers.CORS(headersOk, origins, methods, maxAge)(r.router)
+	h := handlers.CORS(headersOk, origins, methods, maxAge)(r.Router)
 	h = handlers.CompressHandler(h)
 
 	appPort := appConfig.Port
@@ -215,169 +204,4 @@ func rateLimitMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func connectMongoDB() (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(appConfig.Mongodb.ConnectionStr))
-	if err != nil {
-		panic(fmt.Errorf("fatal error connect DB: %w", err))
-	}
-
-	mongoDb := client.Database(appConfig.Mongodb.DbName)
-	userCollection = mongoDb.Collection("users")
-	_, err = userCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-		{
-			Keys: bson.M{
-				"email": 1,
-			},
-			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys: bson.M{
-				"name": 1,
-			},
-			Options: options.Index().SetUnique(true),
-		},
-	})
-	if err != nil {
-		panic(fmt.Errorf("index users: %w", err))
-	}
-
-	authDataCollection = mongoDb.Collection("authorization_codes")
-	_, err = authDataCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-		{
-			Keys: bson.M{
-				"code": 1,
-			},
-		},
-	})
-	if err != nil {
-		panic(fmt.Errorf("index authorization_codes: %w", err))
-	}
-
-	refreshTokenCollection = mongoDb.Collection("refresh_tokens")
-
-	roPresetCollection = mongoDb.Collection("ro_presets")
-	roPresetForSummaryCollection = mongoDb.Collection("authorization_codes")
-	_, err = roPresetCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-		{
-			Keys: bson.M{
-				"id": 1,
-			},
-		},
-		{
-			Keys: bson.M{
-				"user_id": 1,
-			},
-		},
-	})
-	if err != nil {
-		panic(fmt.Errorf("index ro_presets: %w", err))
-	}
-
-	roTagCollection = mongoDb.Collection("preset_tags")
-	_, err = roTagCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-		{
-			Keys: bson.D{
-				{Key: "tag", Value: 1},
-				{Key: "class_id", Value: 1},
-			},
-		},
-		{
-			Keys: bson.M{
-				"preset_id": 1,
-			},
-		},
-		{
-			Keys: bson.D{
-				{Key: "preset_id", Value: 1},
-				{Key: "tag", Value: 1},
-			},
-			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys: bson.D{
-				{Key: "total_like", Value: 1},
-				{Key: "created_at", Value: 1},
-			},
-		},
-	})
-	if err != nil {
-		panic(fmt.Errorf("index preset_tags: %w", err))
-	}
-
-	// storeCollection = mongoDb.Collection("store")
-	// _, err = storeCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-	// 	{
-	// 		Keys: bson.M{
-	// 			"owner_id": 1,
-	// 		},
-	// 		Options: options.Index().SetUnique(true),
-	// 	},
-	// 	{
-	// 		Keys: bson.M{
-	// 			"name": 1,
-	// 		},
-	// 		Options: options.Index().SetUnique(true),
-	// 	},
-	// })
-	// if err != nil {
-	// 	panic(fmt.Errorf("index store: %w", err))
-	// }
-
-	// productCollection = mongoDb.Collection("product")
-	// _, err = productCollection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-	// 	{
-	// 		Keys: bson.D{
-	// 			{Key: "exp_date", Value: 1},
-	// 		},
-	// 	},
-	// 	{
-	// 		Keys: bson.D{
-	// 			{Key: "baht", Value: 1},
-	// 		},
-	// 	},
-	// 	{
-	// 		Keys: bson.D{
-	// 			{Key: "m", Value: 1},
-	// 		},
-	// 	},
-	// 	{
-	// 		Keys: bson.D{
-	// 			{Key: "m", Value: 1},
-	// 			{Key: "baht", Value: 1},
-	// 		},
-	// 	},
-	// 	{
-	// 		Keys: bson.D{
-	// 			{Key: "m", Value: 1},
-	// 			{Key: "baht", Value: 1},
-	// 			{Key: "exp_date", Value: 1},
-	// 		},
-	// 	},
-	// 	{
-	// 		Keys: bson.D{
-	// 			{Key: "m", Value: 1},
-	// 			{Key: "baht", Value: 1},
-	// 			{Key: "exp_date", Value: 1},
-	// 			{Key: "is_published", Value: -1},
-	// 		},
-	// 	},
-	// 	{
-	// 		Keys: bson.D{
-	// 			{Key: "m", Value: 1},
-	// 			{Key: "baht", Value: 1},
-	// 			{Key: "exp_date", Value: 1},
-	// 			{Key: "is_published", Value: -1},
-	// 			{Key: "name", Value: 1},
-	// 		},
-	// 	},
-	// })
-	// if err != nil {
-	// 	panic(fmt.Errorf("index product: %w", err))
-	// }
-
-	return
 }
