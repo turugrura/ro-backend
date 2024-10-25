@@ -47,6 +47,7 @@ type PresetModel struct {
 	WeaponCard2        int           `bson:"weaponCard2" json:"weaponCard2,omitempty"`
 	WeaponCard3        int           `bson:"weaponCard3" json:"weaponCard3,omitempty"`
 	WeaponCard4        int           `bson:"weaponCard4" json:"weaponCard4,omitempty"`
+	WeaponEnchant0     int           `bson:"weaponEnchant0" json:"weaponEnchant0,omitempty"`
 	WeaponEnchant1     int           `bson:"weaponEnchant1" json:"weaponEnchant1,omitempty"`
 	WeaponEnchant2     int           `bson:"weaponEnchant2" json:"weaponEnchant2,omitempty"`
 	WeaponEnchant3     int           `bson:"weaponEnchant3" json:"weaponEnchant3,omitempty"`
@@ -57,6 +58,7 @@ type PresetModel struct {
 	LeftWeaponCard2    int           `bson:"leftWeaponCard2" json:"leftWeaponCard2,omitempty"`
 	LeftWeaponCard3    int           `bson:"leftWeaponCard3" json:"leftWeaponCard3,omitempty"`
 	LeftWeaponCard4    int           `bson:"leftWeaponCard4" json:"leftWeaponCard4,omitempty"`
+	LeftWeaponEnchant0 int           `bson:"leftWeaponEnchant0" json:"leftWeaponEnchant0,omitempty"`
 	LeftWeaponEnchant1 int           `bson:"leftWeaponEnchant1" json:"leftWeaponEnchant1,omitempty"`
 	LeftWeaponEnchant2 int           `bson:"leftWeaponEnchant2" json:"leftWeaponEnchant2,omitempty"`
 	LeftWeaponEnchant3 int           `bson:"leftWeaponEnchant3" json:"leftWeaponEnchant3,omitempty"`
