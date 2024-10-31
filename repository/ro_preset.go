@@ -109,14 +109,16 @@ type PresetModel struct {
 	BootEnchant2       int           `bson:"bootEnchant2" json:"bootEnchant2,omitempty"`
 	BootEnchant3       int           `bson:"bootEnchant3" json:"bootEnchant3,omitempty"`
 	AccLeft            int           `bson:"accLeft" json:"accLeft,omitempty"`
-	AccLeftCard        int           `bson:"accLeftCard" json:"accLeftCard,omitempty"`
+	AccLeftRefine      int           `bson:"accLeftRefine" json:"accLeftRefine,omitempty"`
 	AccLeftGrade       string        `bson:"accLeftGrade" json:"accLeftGrade,omitempty"`
+	AccLeftCard        int           `bson:"accLeftCard" json:"accLeftCard,omitempty"`
 	AccLeftEnchant1    int           `bson:"accLeftEnchant1" json:"accLeftEnchant1,omitempty"`
 	AccLeftEnchant2    int           `bson:"accLeftEnchant2" json:"accLeftEnchant2,omitempty"`
 	AccLeftEnchant3    int           `bson:"accLeftEnchant3" json:"accLeftEnchant3,omitempty"`
 	AccRight           int           `bson:"accRight" json:"accRight,omitempty"`
-	AccRightCard       int           `bson:"accRightCard" json:"accRightCard,omitempty"`
+	AccRightRefine     int           `bson:"accRightRefine" json:"accRightRefine,omitempty"`
 	AccRightGrade      string        `bson:"accRightGrade" json:"accRightGrade,omitempty"`
+	AccRightCard       int           `bson:"accRightCard" json:"accRightCard,omitempty"`
 	AccRightEnchant1   int           `bson:"accRightEnchant1" json:"accRightEnchant1,omitempty"`
 	AccRightEnchant2   int           `bson:"accRightEnchant2" json:"accRightEnchant2,omitempty"`
 	AccRightEnchant3   int           `bson:"accRightEnchant3" json:"accRightEnchant3,omitempty"`
